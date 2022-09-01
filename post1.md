@@ -4,7 +4,7 @@ Recently, the creator of [htmx](https://htmx.org/) has been conducting the [temp
 calling for programmers to expose whether or not template fragments
 are possible in their templating language of choice.
 If you're not familiar with what template fragments are, read this [essay]((https://htmx.org/essays/template-fragments/)).
-In short, they are fragments of an HTML template that can be used on their own if needed, without moving them into an entirely separate file. 
+In short, they are fragments of an HTML template that can be used on their own without creating new, individual files for them. 
 My templating language of choice is [lucid](https://hackage.haskell.org/package/lucid); a monadic DSL for rendering HTML in Haskell.
 Let's go over how lucid works and then see how we can apply the template fragments pattern with it.
 
