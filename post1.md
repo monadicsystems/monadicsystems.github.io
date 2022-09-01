@@ -1,14 +1,16 @@
 # Template Fragments with Lucid
 
-Recently, the creator of [htmx]() has been conducting the [template fragments hype train]() and
-calling for programmers to expose whether or not [template fragments](https://htmx.org/essays/template-fragments/)
+Recently, the creator of [htmx](https://htmx.org/) has been conducting the [template fragments hype train](https://twitter.com/htmx_org/status/1565005004234186753?s=20&t=3NrFYdZUx0aPv_oxkSvq5Q) and
+calling for programmers to expose whether or not template fragments
 are possible in their templating language of choice.
-My templating language of choice is [lucid](); a monadic DSL for rendering HTML in Haskell.
+If you're not familiar with what template fragments are, read this [essay]((https://htmx.org/essays/template-fragments/)).
+In short, they are fragments of an HTML template that can be used on their own if needed, without moving them into an entirely separate file. 
+My templating language of choice is [lucid](https://hackage.haskell.org/package/lucid); a monadic DSL for rendering HTML in Haskell.
 Let's go over how lucid works and then see how we can apply the template fragments pattern with it.
 
 ## Lucid Crash Course
 
-Lucid provides us with an `Html` monad that we can use to sequence and nest HTML tags, like so:
+Lucid provides us with an `Html` monad that we can use to sequence and nest HTML tags, like so
 
 ```haskell
 myHtml :: Html ()
@@ -32,7 +34,7 @@ If two tags have the same indentation level in the same `do` block, they will be
 If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
 
 The above isn't a template though, because everything is statically defined. We're just writing HTML using a fancy syntax.
-Let's parameterize our `myHtml` value by turning it into a function:
+Let's parameterize our `myHtml` value by turning it into a function
 
 ```haskell
 data Person = Person
@@ -87,7 +89,7 @@ bobHtml = personHtml $ Person
 
 Let's apply what we learned to the template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast.
 
-First, let's translate the first Chill template used in the essay into lucid:
+First, let's translate the first Chill template used in the essay into lucid
 
 ```haskell
 data Contact = Contact
@@ -112,7 +114,7 @@ contactDetail contact = do
 
 Our goal is to turn the button in the `contactDetail` template into it's own template so that we can render it by itself if we need to.
 
-In lucid we can simply factor out the HTML we want to reuse into its own function and use it like any other template function:
+In lucid we can simply factor out the HTML we want to reuse into its own function, and use it like any other template function
 
 ```haskell
 data Contact = Contact
@@ -136,7 +138,7 @@ contactArchiveUI contact =
     else button_ [hxPatch_ "/contacts/" <> show contact.id] "Archive"
 ```
 
-Now we can do:
+Now we can do the following
 
 ```haskell
 someContact :: Contact
@@ -153,9 +155,8 @@ justTheButton :: Html ()
 justTheButton = contactArchiveUI someContact
 ```
 
-Voila! Quite simple.
+There we go! Quite simple.
 
 ## Conclusion
 
-Lucid does have a concept of template fragments.
-
+Lucid does have a concept of template fragments. You have to factor out the HTML you want to reuse into its own function, which is slightly less convinient than the chill templates example in the original essay. The chill template in the original essay doesn't require you to factor out anything from the base template, but only annotate the fragment with an identifier that you use to refer to it.
