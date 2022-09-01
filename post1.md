@@ -57,7 +57,7 @@ personHtml p = do
 
 > **Note**
 > 
-> You probably noticed in the templating function that I'm using the `toHtml` function, but in the static version of the template I was able to use a
+> You probably noticed in the templating function that we're using the `toHtml` function, but in the static version of the template we were able to use a
 > string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when
 > the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC (the standard Haskell compiler) infers
 > the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of
