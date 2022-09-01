@@ -87,9 +87,9 @@ bobHtml = personHtml $ Person
 
 ## Template Fragments with Lucid
 
-Let's apply what we learned to the template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast.
+Let's apply what we learned to the template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the two approaches that these templating libraries take.
 
-First, let's translate the first Chill template used in the essay into lucid
+First, let's translate the first chill template used in the essay into lucid
 
 ```haskell
 data Contact = Contact
