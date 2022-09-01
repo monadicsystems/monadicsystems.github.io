@@ -1,3 +1,3 @@
 # Posts
 
-- [Lucid Template Fragments](monadic.systems)
+- [Lucid Template Fragments](post1)
