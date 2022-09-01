@@ -34,7 +34,7 @@ If two tags have the same indentation level in the same `do` block, they will be
 If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
 
 The above isn't a template though, because everything is statically defined. We're just writing HTML using a fancy syntax.
-Let's parameterize our `myHtml` value by turning it into a function
+Let's parameterize our `myHtml` value by turning it into a function called `personHtml`
 
 ```haskell
 data Person = Person
