@@ -112,9 +112,9 @@ contactDetail contact = do
       div_ [hxTarget_ "this"] $ do
         if contact.archived
           then do
-            button_ [hxPatch_ "/contacts/" <> show contact.id <> "/unarchive"] "Unarchive"
+            button_ [hxPatch_ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
           else do
-            button_ [hxPatch_ "/contacts/" <> show contact.id] "Archive"
+            button_ [hxPatch_ "/contacts/" <> toText contact.id] "Archive"
       h3_ [] "Contact"
       p_ [] $ toHtml contact.email
 ```
@@ -141,8 +141,8 @@ contactDetail contact = do
 contactArchiveUI :: Contact -> Html ()
 contactArchiveUI contact = 
   if contact.archived
-    then button_ [hxPatch_ "/contacts/" <> show contact.id <> "/unarchive"] "Unarchive"
-    else button_ [hxPatch_ "/contacts/" <> show contact.id] "Archive"
+    then button_ [hxPatch_ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
+    else button_ [hxPatch_ "/contacts/" <> toText contact.id] "Archive"
 ```
 
 Now we can do the following
