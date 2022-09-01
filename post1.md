@@ -1,4 +1,4 @@
-# Template Fragments with Lucid
+# Lucid Template Fragments
 
 Recently, the creator of [htmx](https://htmx.org/) has been conducting the [template fragments hype train](https://twitter.com/htmx_org/status/1565005004234186753?s=20&t=3NrFYdZUx0aPv_oxkSvq5Q) and
 calling for programmers to expose whether or not template fragments
@@ -94,7 +94,7 @@ bobHtml = personHtml $ Person
 
 ## Template Fragments with Lucid
 
-Let's apply what we learned to the template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the two approaches that these templating libraries take.
+Let's apply what we learned and implement template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
 
 First, let's translate the first chill template used in the essay into lucid
 
