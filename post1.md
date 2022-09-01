@@ -57,11 +57,11 @@ personHtml p = do
 
 > **Note**
 > 
-> You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a
+> You probably noticed in the templating function that I'm using the `toHtml` function, but in the static version of the template I was able to use a
 > string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when
-> the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"`
-> to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are
-> defined as being of type `Text`. We could define the `Person` type as
+> the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC (the standard Haskell compiler) infers
+> the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of
+> the `Person` record are defined as being of type `Text`. We could define the `Person` type as
 > 
 > ```haskell
 > data Person = Person
@@ -94,7 +94,7 @@ bobHtml = personHtml $ Person
 
 ## Template Fragments with Lucid
 
-Let's apply what we learned and implement template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
+Let's apply what we learned and implement the template fragments pattern. I'm going to use the example used in the original [essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
 
 First, let's translate the first chill template used in the essay into lucid
 
@@ -111,17 +111,14 @@ contactDetail contact = do
     body_ [] $ do
       div_ [hxTarget_ "this"] $ do
         if contact.archived
-          then do
-            button_ [hxPatch_ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
-          else do
-            button_ [hxPatch_ "/contacts/" <> toText contact.id] "Archive"
+          then button_ [hxPatch_ $ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
+          else button_ [hxPatch_ $ "/contacts/" <> toText contact.id] "Archive"
       h3_ [] "Contact"
       p_ [] $ toHtml contact.email
 ```
 
-Our goal is to turn the button in the `contactDetail` template into it's own template so that we can render it by itself if we need to.
-
-In lucid we can simply factor out the HTML we want to reuse into its own function, and use it like any other template function
+Our goal is to turn the button in the `contactDetail` template into its own template so that we can render it by itself if needed.
+To do this, we can simply factor out the HTML we want to reuse into its own function, and use it like any other template function
 
 ```haskell
 data Contact = Contact
@@ -141,8 +138,8 @@ contactDetail contact = do
 contactArchiveUI :: Contact -> Html ()
 contactArchiveUI contact = 
   if contact.archived
-    then button_ [hxPatch_ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
-    else button_ [hxPatch_ "/contacts/" <> toText contact.id] "Archive"
+    then button_ [hxPatch_ $ "/contacts/" <> toText contact.id <> "/unarchive"] "Unarchive"
+    else button_ [hxPatch_ $ "/contacts/" <> toText contact.id] "Archive"
 ```
 
 Now we can do the following
@@ -166,4 +163,4 @@ There we go! Quite simple.
 
 ## Conclusion
 
-Lucid does have a concept of template fragments. You have to factor out the HTML you want to reuse into its own function, which is slightly less convinient than the chill templates example in the original essay. The chill template in the original essay doesn't require you to factor out anything from the base template, but only annotate the fragment with an identifier that you use to refer to it.
+Lucid does support the concept of template fragments. You have to factor out the HTML you want to reuse into its own function and explicitly pass in parameters to the definition, which is slightly less convinient than the chill templates example in the original essay. The chill template in the original essay doesn't require you to factor out anything from the base template, but only annotate the fragment with an identifier that you use to refer to it. I also found it interesting that the chill template fragment seems to "inherit" the parameters passed into the base template.
