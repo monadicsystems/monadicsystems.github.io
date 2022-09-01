@@ -57,7 +57,7 @@ personHtml p = do
 
 You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` type as
 
-```
+```haskell
 data Person = Person
   { name :: Html ()
   , location :: Html ()
