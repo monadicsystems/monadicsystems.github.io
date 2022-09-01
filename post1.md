@@ -26,7 +26,7 @@ myHtml = do
 ```
 
 It's pretty straight forward.
-You have a tag function, like `h1_`, that you apply to a list of attributes and an inner HTML value, which may be some text or another sequence of HTML tags.
+You have a tag function, like `h1_`, that you apply to a list of attributes and an inner HTML value of type `Html ()`.
 If two tags have the same indentation level in the same `do` block, they will be rendered as siblings.
 If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
 
@@ -52,7 +52,7 @@ personHtml p = do
     ul_ [] $ mapM_ (li_ [] . toHtml) p.likes -- mapM_ is like the map function, but it works in a monadic context
 ```
 
-You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` record as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
+You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` type as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
 
 Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
 
@@ -63,7 +63,7 @@ myHtml = personHtml $ Person
   , location = "Earth"
   , likes = ["Haskell", "htmx", "The color green"]
   }
-  
+
 bobHtml :: Html ()
 bobHtml = personHtml $ Person
   { name = "Bob"
