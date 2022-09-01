@@ -1,3 +1,9 @@
-# Posts
+# Welcome
 
-- [Lucid Template Fragments](post1)
+## What We Do
+
+Monadic Systems is a software development company specializing in the use of functional programming.
+
+## Posts
+
+- [Lucid Template Fragments](/post1)
