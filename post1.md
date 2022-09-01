@@ -1,9 +1,10 @@
 ---
 title: Lucid Template Fragments
 author: Rashad Gover
-image: /logo-bg.png
 summary: A blog post about HTML template fragments in Haskell
 ---
+
+# Lucid Template Fragments
 
 Recently, the creator of [htmx](https://htmx.org/) has been conducting the [template fragments hype train](https://twitter.com/htmx_org/status/1565005004234186753?s=20&t=3NrFYdZUx0aPv_oxkSvq5Q) and
 calling for programmers to expose whether or not template fragments
