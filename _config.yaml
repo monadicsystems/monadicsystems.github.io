@@ -1,4 +1,5 @@
 remote_theme: pages-themes/minimal@v0.2.0
 title: Monadic Systems
+logo: logo.png
 description: Building truly integrated systems
 show_downloads: false
