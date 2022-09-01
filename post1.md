@@ -4,8 +4,9 @@ Recently, the creator of [htmx]() has been conducting the [template fragments hy
 calling for programmers to expose whether or not [template fragments](https://htmx.org/essays/template-fragments/)
 are possible in their templating language of choice.
 My templating language of choice is [lucid](); a monadic DSL for rendering HTML in Haskell.
+Let's go over how lucid works and then see how we can apply the template fragments pattern with it.
 
-## Lucid in a nutshell
+## Lucid Crash Course
 
 Lucid provides us with an `Html` monad that we can use to sequence and nest HTML tags, like so:
 
@@ -52,7 +53,17 @@ personHtml p = do
     ul_ [] $ mapM_ (li_ [] . toHtml) p.likes -- mapM_ is like the map function, but it works in a monadic context
 ```
 
-You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` type as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
+You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` type as
+
+```
+data Person = Person
+  { name :: Html ()
+  , location :: Html ()
+  , likes :: [Html ()]
+  }
+```
+
+and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
 
 Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
 
@@ -71,6 +82,12 @@ bobHtml = personHtml $ Person
   , likes = ["The blues", "A good hamburger", "Swimming"]
   }
 ```
+
+## Template Fragments with Lucid
+
+Let's apply what we learned to the template fragments pattern. I'm going to use the [example used in the original essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast.
+
+First, let's translate the first Chill template used in the essay into lucid:
 
 ```haskell
 data Contact = Contact
@@ -93,11 +110,52 @@ contactDetail contact = do
       p_ [] $ toHtml contact.email
 ```
 
-## Lucid templates are "data-driven"
+Our goal is to turn the button in the `contactDetail` template into it's own template so that we can render it by itself if we need to.
 
-## Lucid template fragments
+In lucid we can simply factor out the HTML we want to reuse into its own function and use it like any other template function:
+
+```haskell
+data Contact = Contact
+  { id :: Int
+  , email :: Text
+  , archived :: Bool
+  }
+
+contactDetail :: Contact -> Html ()
+contactDetail contact = do
+  html_ [] $ do
+    body_ [] $ do
+      div_ [hxTarget_ "this"] $ contactArchiveUI contact
+      h3_ [] "Contact"
+      p_ [] $ toHtml contact.email
+
+contactArchiveUI :: Contact -> Html ()
+contactArchiveUI contact = 
+  if contact.archived
+    then button_ [hxPatch_ "/contacts/" <> show contact.id <> "/unarchive"] "Unarchive"
+    else button_ [hxPatch_ "/contacts/" <> show contact.id] "Archive"
+```
+
+Now we can do:
+
+```haskell
+someContact :: Contact
+someContact = Contact
+  { id = 101
+  , email = "someemail@some.com"
+  , archived = True
+  }
+
+allTheDetails :: Html ()
+allTheDetails = contactDetail someContact
+
+justTheButton :: Html ()
+justTheButton = contactArchiveUI someContact
+```
+
+Voila! Quite simple.
 
 ## Conclusion
 
-Template fragments are a natural occurence in Lucid. I encourage others to 
+Lucid does have a concept of template fragments.
 
