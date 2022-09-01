@@ -10,7 +10,7 @@ Let's go over how lucid works and then see how we can apply the template fragmen
 
 ## Lucid Crash Course
 
-Lucid provides us with an `Html` monad that we can use to sequence and nest HTML tags, like so
+Lucid provides us with an `Html` monad that we can use to sequence and nest HTML tags, like so:
 
 ```haskell
 myHtml :: Html ()
@@ -34,7 +34,7 @@ If two tags have the same indentation level in a `do` block, they will be render
 If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
 
 The above isn't a template though, because everything is statically defined. We're just writing HTML using a fancy syntax.
-Let's parameterize our `myHtml` value by turning it into a function. We'll call the template function `personHtml`
+Let's parameterize our `myHtml` value by turning it into a function. We'll call the template function `personHtml`:
 
 ```haskell
 data Person = Person
@@ -74,7 +74,7 @@ personHtml p = do
 > and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields.
 > It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
 
-Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
+Awesome! Now we have an HTML template that we can apply to any value of the type `Person`:
 
 ```haskell
 myHtml :: Html ()
@@ -96,7 +96,7 @@ bobHtml = personHtml $ Person
 
 Let's use what we learned and implement the template fragments pattern. I'm going to use the example used in the original [essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
 
-First, let's translate the first chill template used in the essay into lucid
+First, let's translate the first chill template used in the essay into lucid:
 
 ```haskell
 data Contact = Contact
@@ -118,7 +118,7 @@ contactDetail contact = do
 ```
 
 Our goal is to turn the button in the `contactDetail` template into its own template so that we can render it by itself if needed.
-To do this, we can simply factor out the HTML we want to reuse into its own function, and use it like any other template function
+To do this, we can simply factor out the HTML we want to reuse into its own function, and use it like any other template function:
 
 ```haskell
 data Contact = Contact
@@ -142,7 +142,7 @@ contactArchiveUI contact =
     else button_ [hxPatch_ $ "/contacts/" <> toText contact.id] "Archive"
 ```
 
-Now we can do the following
+Now we can do the following:
 
 ```haskell
 someContact :: Contact
