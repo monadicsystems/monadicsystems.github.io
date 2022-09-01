@@ -1,6 +1,7 @@
 ---
 title: Lucid Template Fragments
 author: Rashad Gover
+image: /logo-bg.png
 summary: A blog post about HTML template fragments in Haskell
 ---
 
