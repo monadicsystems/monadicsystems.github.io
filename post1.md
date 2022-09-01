@@ -1,8 +1,9 @@
 # Template Fragments with Lucid
 
-Recently, the creator of htmx Carson Gross has been conducting the template fragments hype train and
-calling for programmers to expose if template fragments are possible in their templating language of choice.
-My templating language of choice is Lucid; a monadic DSL for rendering HTML in Haskell.
+Recently, the creator of [htmx]() has been conducting the [template fragments hype train]() and
+calling for programmers to expose whether or not [template fragments](https://htmx.org/essays/template-fragments/)
+are possible in their templating language of choice.
+My templating language of choice is [lucid](); a monadic DSL for rendering HTML in Haskell.
 
 ## Lucid in a nutshell
 
@@ -25,9 +26,45 @@ myHtml = do
 ```
 
 It's pretty straight forward.
-You have a tag function, like `h1_`, that you apply to a list of attributes and an inner HTML value.
-If two tags have the same indentation level, they will be rendered next to eachother.
-If one tag is in the `do` block of the another tag, it is rendered within the other tag.
+You have a tag function, like `h1_`, that you apply to a list of attributes and an inner HTML value, which may be some text or another sequence of HTML tags.
+If two tags have the same indentation level in the same `do` block, they will be rendered as siblings.
+If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
+
+The above isn't a template though, because everything is statically defined. We're just writing HTML using a fancy syntax.
+Let's parameterize our `myHtml` value by turning it into a function:
+
+```haskell
+data Person = Person
+  { name :: Text
+  , location :: Text
+  , likes :: [Text]
+  }
+
+personHtml :: Person -> Html ()
+personHtml p = do
+  h1_ [class_ "text-xl"] "Bio"
+  div_ [class_ "info-box"] $ do
+    h2_ [] "Name"
+    p_ [] $ toHtml p.name
+    h2_ [] "Location"
+    p_ [] $ toHtml p.location
+    h2_ [] "Likes"
+    ul_ [] $ mapM_ (li_ [] . toHtml) p.likes
+    
+myHtml :: Html ()
+myHtml = personHtml $ Person
+  { name = "Rashad"
+  , location = "Earth"
+  , likes = ["Haskell", "htmx", "The color green"]
+  }
+  
+bobHtml :: Html ()
+bobHtml = personHtml $ Person
+  { name = "Bob"
+  , location = "Antarctica"
+  , likes = ["The blues", "A good hamburger", "Swimming"]
+  }
+```
 
 ```haskell
 data Contact = Contact
