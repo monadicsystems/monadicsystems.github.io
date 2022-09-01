@@ -66,6 +66,11 @@ bobHtml = personHtml $ Person
   }
 ```
 
+Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
+
+***Note
+You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of `Person` are defined as being of type `Text`. We could define the `Person` record as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if they are of type `Text`, and we convert them to `Html ()` when it's necessary.
+
 ```haskell
 data Contact = Contact
   { id :: Int
