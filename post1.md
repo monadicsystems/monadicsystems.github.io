@@ -50,7 +50,13 @@ personHtml p = do
     p_ [] $ toHtml p.location
     h2_ [] "Likes"
     ul_ [] $ mapM_ (li_ [] . toHtml) p.likes -- mapM_ is like the map function, but it works in a monadic context
-    
+```
+
+You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` record as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if the fields are of type `Text`, and we convert them to `Html ()` when it's necessary.
+
+Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
+
+```haskell
 myHtml :: Html ()
 myHtml = personHtml $ Person
   { name = "Rashad"
@@ -65,10 +71,6 @@ bobHtml = personHtml $ Person
   , likes = ["The blues", "A good hamburger", "Swimming"]
   }
 ```
-
-You probably noticed that in the templating function I'm using the `toHtml` function, but in the static version of the template I was able to use a string literal like `"The color green"` without using `toHtml`. This is because of how Haskell infers the types of string literals when the `OverloadedStrings` language extension is enabled. When the `OverloadedStrings` extension is on, GHC infers the string literal `"The color green"` to be of type `Html ()` automatically. GHC can't do this in the `personHtml` template function because the fields of the `Person` record are defined as being of type `Text`. We could define the `Person` record as `data Person = Person { name :: Html (), location :: Html (), likes :: [Html ()]}` and remove the need to use `toHtml` in our template, but that would be unweildy to other parts of the program that need to manipulate those fields. It's more practical if they are of type `Text`, and we convert them to `Html ()` when it's necessary.
-
-Awesome! Now we have an HTML template that we can apply to any value of the type `Person`.
 
 ```haskell
 data Contact = Contact
