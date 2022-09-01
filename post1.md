@@ -3,9 +3,9 @@
 Recently, the creator of [htmx](https://htmx.org/) has been conducting the [template fragments hype train](https://twitter.com/htmx_org/status/1565005004234186753?s=20&t=3NrFYdZUx0aPv_oxkSvq5Q) and
 calling for programmers to expose whether or not template fragments
 are possible in their templating language of choice.
-If you're not familiar with what template fragments are, read this [essay]((https://htmx.org/essays/template-fragments/)).
+If you're not familiar with what template fragments are, read this [essay](https://htmx.org/essays/template-fragments/).
 In short, they are fragments of an HTML template that can be used on their own without creating new, individual files for them. 
-My templating language of choice is [lucid](https://hackage.haskell.org/package/lucid); a monadic DSL for rendering HTML in Haskell.
+My templating language of choice is [lucid](https://hackage.haskell.org/package/lucid): a monadic DSL for rendering HTML in Haskell.
 Let's go over how lucid works and then see how we can apply the template fragments pattern with it.
 
 ## Lucid Crash Course
@@ -30,7 +30,7 @@ myHtml = do
 
 It's pretty straight forward.
 You have a tag function, like `h1_`, that you apply to a list of attributes and an inner HTML value of type `Html ()`.
-If two tags have the same indentation level in the same `do` block, they will be rendered as siblings.
+If two tags have the same indentation level in a `do` block, they will be rendered as siblings.
 If a tag is within the `do` block of the another tag's inner HTML value, it will be rendered as a child of the other tag.
 
 The above isn't a template though, because everything is statically defined. We're just writing HTML using a fancy syntax.
@@ -94,7 +94,7 @@ bobHtml = personHtml $ Person
 
 ## Template Fragments with Lucid
 
-Let's apply what we learned and implement the template fragments pattern. I'm going to use the example used in the original [essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
+Let's use what we learned and implement the template fragments pattern. I'm going to use the example used in the original [essay](https://htmx.org/essays/template-fragments/) so we can compare and contrast between the approaches that these two templating libraries take.
 
 First, let's translate the first chill template used in the essay into lucid
 
@@ -163,4 +163,4 @@ There we go! Quite simple.
 
 ## Conclusion
 
-Lucid does support the concept of template fragments. You have to factor out the HTML you want to reuse into its own function and explicitly pass in parameters to the definition, which is slightly less convinient than the chill templates example in the original essay. The chill template in the original essay doesn't require you to factor out anything from the base template, but only annotate the fragment with an identifier that you use to refer to it. I also found it interesting that the chill template fragment seems to "inherit" the parameters passed into the base template.
+Lucid does support the concept of template fragments. You have to factor out the HTML you want to reuse into its own function and explicitly define its parameters, which is slightly less convinient than the chill templates example in the original essay. The chill template in the original essay doesn't require you to factor out anything from the base template, but only annotate the fragment with an identifier that you use to refer to it. I also found it interesting that the chill template fragment seems to "inherit" the parameters passed into the base template.
