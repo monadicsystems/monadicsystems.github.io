@@ -3,7 +3,6 @@ title: Type Safe Named Routes Using Bidrectional Patterns
 author: Rashad Gover
 image: /logo-bg.png
 summary: A blog post about how type-safe named routes are implemented in Okapi
-render_with_liquid: false
 ---
 
 # Type Safe Named Routes Using Bidirectional Patterns
