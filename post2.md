@@ -158,11 +158,11 @@ Okapi proposes a third technique: bidirectional patterns.
 ## Type Safe Named Routes in Okapi
 
 Before we see examples of how type safe named routes work in Okapi, we must first understand two language extensions:
-`PatternSynonyms` and `ViewPatterns`.
+`-XPatternSynonyms` and `-XViewPatterns`.
 
-### User-defined Patterns
+### -XPatternSynonyms
 
-Bidirectional patterns are language constructs in Haskell that can be used to **construct** and **destructure** data.
+Bidirectional patterns are a feature in Haskell that can be used to **construct** and **destructure** data.
 If you use Haskell, you define bidirectional patterns all the time. For example, when you define a data type like
 
 ```haskell
@@ -194,8 +194,8 @@ pattern FooText text <- Foo text _
 As you can see, pattern declarations are similar to function declarations, but they are prefixed with the `pattern` keyword
 and must have an uppercase identifier, like data constructors. They can even have type signatures! You'll also notice that instead
 of a `=` preceding the body of the declaration, a `<-` is used instead. This reverse arrow is used when defining what's
-called a **unidirectional pattern**. Unidirectional patterns can only be used for deconstructing values. For example, let's redefine
-the function `getTextFromFoo` using our custom unidirectional pattern:
+called a **unidirectional pattern**. Unidirectional patterns are unidirectional because they can only be used for deconstructing values, not constructing them.
+For example, let's redefine the function `getTextFromFoo` using the unidirectional pattern we defined:
 
 ```haskell
 getTextFromFoo :: Foo -> Text
@@ -205,6 +205,7 @@ getTextFromFoo (FooText text) = text
 If we try to use the same pattern to construct a value of type `Foo`, we will get a compiler error:
 
 ```haskell
+myFoo :: Foo
 myFoo = FooText "hello" -- THIS WON'T WORK BECAUSE FooText IS UNIDRECTIONAL! ONE WAY! NOT BOTH!
 ```
 
@@ -232,7 +233,7 @@ anotherFoo = FooText "YEAH"
 -- False
 ```
 
-Suppose we needed a way to construct and deconstruct a values of type `Foo`, but with `Foo`'s parameters flipped.
+Suppose we needed a way to construct and deconstruct values of type `Foo`, but with `Foo`'s parameters flipped.
 We can do this using another syntax for pattern declarations:
 
 ```haskell
@@ -252,25 +253,69 @@ except the parameters are in reverse order:
 
 Nice!
 
-### View Patterns Crash Course
+### -XViewPatterns
 
 Yes, there's more! We can make patterns even more powerful in Haskell using the `-XViewPatterns` language extenstion.
 When this language extension is turned on, we can pattern match on the *projection of a value* and not just the value itself.
+This useful for pattern matching on data structures, like values of the `Map` type from the `containers` package.
 
-
+Suppose we have a map representing the favorite colors of random people
 
 ```haskell
-data Person = Person
-  { name :: Text
-  , salary :: Float
-  , address :: Text
-  }
+import qualified Data.Map as Map
 
-irsMap :: Map Int Person
-irsMap = fromList [ -- everyone in the U.S. ]
+data Color = Red | Blue | Yellow
+
+favoriteColors :: Map.Map Text Color
+favoriteColors = Map.fromList [("Bob", Blue), ("Alice", Yellow), ("Larry", Yellow)]
 ```
 
-We must sift through the map and find everyone making less than a million dollars a year so we can tax them.
+and we want to see if a specific person's favorite color is `Blue` using view patterns.
+First, we need to define what I call a **view function**. The view function is what we'll use in the view pattern to project a property of the data structure that we want to pattern match on. We'll call this view function `viewColor`:
+
+```haskell
+viewColor :: Text -> Map.Map Text Color -> (Maybe Color, Map.Map Text Color)
+viewColor name colorMap = case Map.lookup name colorMap of
+  Nothing    -> (Nothing, colorMap)
+  Just color -> (Just color, Map.delete (name, color) colorMap)
+```
+
+It takes a name of type `Text`, a `Map` from `Text` to `Color`, and returns either one of these tuples:
+
+1. A `Color` value wrapped with `Just` if it's found in the `Map`, and a new `Map` with the entry that was found deleted from it
+2. `Nothing`, and the original `Map` that was passed into the view function
+
+The return type of the view function is important because that's what we'll be pattern matching on in our view pattern.
+
+Now let's use our view function in a view pattern.
+
+```haskell  
+favoriteColorIsBlue :: Text -> Map.Map Text Color -> Bool
+favoriteColorIsBlue name (viewColor name -> (Just Blue, _)) = True
+favoriteColorIsBlue _ _ = False
+```
+
+You'll notice on the first line of our function declaration, in place of the second parameter, there's a call to our `viewColor name` function followed by a `->`. That's a view pattern. We're applying our view function `viewColor name` to the argument and pattern matching on the result tuple by using `->`. Note how function currying is being used to our advantadge here. The type of `viewColor` is `Text -> Map Text Color -> (Maybe Color, Map Text Color)`, but the type of `viewColor name` is `Map Text Color -> (Maybe Color, Map Text Color)` which allows us to use it in this view pattern. Also note how we can pass in any variables on the RHS into the view function that's used in our view pattern. The pattern after the `->` is for matching on the tuple result of the view function. In this case we just want to match on `Just Blue` and ignore the new `Map Text Color` value.
+
+You may be wondering, "Why put all that logic into a pattern and not just use a regular function?". Well, this is a contreived example so I agree with you.
+The benefit of using view patterns is that you can create abstractions that you wouldn't be able to otherwise. In some cases, a solution using view patterns can be more concise and allow more code reuse. For example, let's say we wanted to create a function that takes the names of two people, a map of everyone's favorite color, and returns whether or not the two people would get along based on their color preferences:
+
+```haskell
+{-
+People who like Blue get along with other people that like Blue or Yellow
+People who like Yellow get along with everybody
+People who like Red can only get along with people who like Yellow
+-}
+getsAlong :: Text -> Text -> Map.Map Text Color -> Bool
+getsAlong person1 person2 (viewColor person1 -> (Just Yellow, viewColor person2 -> (Just _, _))) = True
+getsAlong person1 person2 (viewColor person1 -> (Just Red, viewColor person2 -> (Just Yellow, _))) = True
+getsAlong person1 person2 (viewColor person1 -> (Just Blue, viewColor person2 -> (Just Blue, _))) = True
+getsAlong person1 person2 (viewColor person1 -> (Just Blue, viewColor person2 -> (Just Yellow, _))) = True
+getsAlong _ _ = False
+```
+
+Notice how we can nest view patterns. In this case, we're looking for two people in a map to see if they would get along so we use a view pattern on the map passed into the function to see what color the first person likes, and then we use the same view pattern again on the map result from the first view pattern and 
+see what color the second likes. Remember how our projection function `viewColor` deletes an entry in the map if it was found? This is where it comes in handy: when we want to project values out of a data structure multiple times.
 
 ### How Okapi Does It
 
