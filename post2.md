@@ -112,9 +112,11 @@ Route::get('/petstore/reptile/snake', function () {
 Now we can use the `snakesforsale` identifier in our templates (Laravel uses Blade templates) like so:
 
 ```html
+{% raw %}
 ...
 <a href="{{ route('snakesforsale') }}">CUTE SNAKES FOR SALE</a>
 ...
+{% endraw %}
 ```
 
 Named routes are also nice becasuse we can update the definition of a route without updating all of the places in the codebase where we refer to that route.
