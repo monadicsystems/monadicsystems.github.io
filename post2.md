@@ -60,7 +60,7 @@ getProduct = do
     & return
 ```
 
-An interesting thing to note about Okapi is its lack of distinction between *route* and *handler*. If the developer wants, they can
+An interesting thing to note about Okapi is its lack of distinction between route and handler. If the developer wants, they can
 separate the two constructs like so:
 
 ```haskell
@@ -78,8 +78,8 @@ getProductHandler (Name name) = ok & setPlaintext ("The product is " <> name) & 
 
 ## Named Routes
 
-Now that we briefly covered what routes and handlers are, let's uncover what u/n00bomb was talking about when they mentioned *named routes*.
-I found the description of named routes in [this Laravel tutorial](https://www.javatpoint.com/named-routes-in-laravel#:~:text=Named%20routes%20is%20an%20important,a%20nickname%20to%20the%20route.) to be a good summary of the concept:
+Now that we briefly covered what routes and handlers are, let's uncover what u/n00bomb was talking about when they mentioned **named routes**.
+I found this description of named routes in [this Laravel tutorial](https://www.javatpoint.com/named-routes-in-laravel#:~:text=Named%20routes%20is%20an%20important,a%20nickname%20to%20the%20route.) to be a good summary of the concept:
 
 > Named routes is an important feature in the Laravel framework.
 > It allows you to refer to the routes when generating URLs or redirects to the specific routes.
@@ -145,18 +145,16 @@ There a couple of issues with this though:
 - The developer can pass in extra parameters or not enough parameters, e.g. `route('profile', ['uid' => 1, 'foo' => 'bar', 'baz' => 420])`.
   In Laravel, this generates the URL `/user/1/profile?foo=bar&baz=420`. This may cause some problems down the road.
 
-Some web frameworks in statically typed languages offer a solution to these issues that we'll call *type safe named routes*.
+Some web frameworks in statically typed languages offer a solution to these issues that we'll call **type safe named routes**.
 Type safe named routes are similar to named routes, except they offer an extra layer of safety that catches developer errors at the best time: compile time.
 
-Although you can find implementations of type safe named routes in other statically typed languages, we'll be covering how web frameworks in Haskell do it.
+Although you can find implementations of type safe named routes in other statically typed languages, I'm most familiar with how web frameworks in Haskell do it.
 For the most part, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
 
-1. Template Haskell
-2. Type-level programming
+1. Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
+2. Type-level programming e.g. [Servant]()
 
-### Type Safe Named Routes in Yesod
-
-### Type Safe Named Routes in Servant
+Okapi proposes a third technique: bidirectional patterns.
 
 ### How Okapi Does It
 
