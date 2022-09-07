@@ -1,10 +1,10 @@
 ---
-title: Type Safe Named Routes Using Bidrectional Patterns
+title: Type Safe Named Routes Using Patterns
 image: /logo-bg.png
-summary: A blog post about how type-safe named routes are implemented in Okapi
+summary: A blog post about type safe named routes in Okapi
 ---
 
-# Type Safe Named Routes Using Bidirectional Patterns
+# Type Safe Named Routes Using Patterns
 
 A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion to be had and I got lots of useful, constructive feedback.
@@ -155,10 +155,10 @@ For the most part, Haskell web frameworks utilize one of these two techniques to
 
 Okapi proposes a third technique: bidirectional patterns.
 
-## Type Safe Named Routes in Okapi
+## Patterns On Steroids
 
-Before we see examples of how type safe named routes work in Okapi, we must first understand two language extensions:
-`-XPatternSynonyms` and `-XViewPatterns`.
+Before we see examples of how type safe named routes work in Okapi, we must first understand two language extensions
+that make Haskell's patterns more powerful: `-XPatternSynonyms` and `-XViewPatterns`.
 
 ### -XPatternSynonyms
 
@@ -317,7 +317,9 @@ getsAlong _ _ = False
 Notice how we can nest view patterns. In this case, we're looking for two people in a map to see if they would get along so we use a view pattern on the map passed into the function to see what color the first person likes, and then we use the same view pattern again on the map result from the first view pattern and 
 see what color the second likes. Remember how our projection function `viewColor` deletes an entry in the map if it was found? This is where it comes in handy: when we want to project values out of a data structure multiple times.
 
-### How Okapi Does It
+## How Okapi Uses Patterns For Type Safe Named Routes
+
+
 
 In Okapi, type safe named routes are implemented using bidrec
 
