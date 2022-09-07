@@ -3,6 +3,7 @@ title: Type Safe Named Routes Using Bidrectional Patterns
 author: Rashad Gover
 image: /logo-bg.png
 summary: A blog post about how type-safe named routes are implemented in Okapi
+render_with_liquid: false
 ---
 
 # Type Safe Named Routes Using Bidirectional Patterns
@@ -117,9 +118,11 @@ Now we can use the `snakesforsale` identifier in our templates (Laravel uses Bla
 ```
 
 Named routes are also nice becasuse we can update the definition of a route without updating all of the places in the codebase where we refer to that route.
-The definition may change, but as long as the route's identifier is the same we can rest assured that we have no broken links on our website.
+The definition may change, but as long as the route's identifier is the same we can rest assured that we have no broken links on our website (internal facing ones at least).
 
-## Type-safe Named Routes (A.K.A. Type-safe URLs)
+## Type Safe Named Routes
+
+Even better than named routes are *type safe named routes*.
 
 Type-safe URLs (or URIs) are URLs that can be constructed safely because they contain type information. Constructing URLs with string concatenation is error prone because the dynamic parts of the URL aren’t specifically typed, they are all of type String, and they are more prone to human error because typos within the String aren’t caught by the compiler. Let’s say our server handles the endpoint `/todo/:id`, where `:id` is a path parameter representing a todo ID number. If we want to link to the `/todo/:id` endpoint from one of our pages we need to construct the URL and add it to our HTML. With a plain string concatenation method, we could use a function like
 
