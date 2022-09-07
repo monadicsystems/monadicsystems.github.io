@@ -31,7 +31,7 @@ Frameworks use various language features for defining routes and their handlers.
 
 For example, Python's Flask uses function decorators to define routes and the function definitions they're applied to as handlers:
 
-```Python
+```python
 @app.route('/product/<name>')
 def get_product(name):
   return "The product is " + str(name)
@@ -39,15 +39,15 @@ def get_product(name):
 
 PHP's Laravel uses the `Route` class and its methods to define routes, and callback functions to define handlers:
 
-```PHP
+```php
 Route::get('/product/{name}', function ($name) {
     return 'The product is '.$name;
 });
 ```
 
-Okapi uses special monadic functions to define both the routes and handlers:
+Okapi uses a special monad to define both routes and handlers:
 
-```Haskell
+```haskell
 newtype Name a = Name { unName :: Text }
 
 getProduct = do
@@ -64,12 +64,12 @@ An interesting thing to note about Okapi is its lack of distinction between *rou
 separate the two constructs like so:
 
 ```haskell
-getProduct = getProductRoute >>= getProductHandler -- getProductHandler could be a lambda function
+getProduct = getProductRoute >>= getProductHandler
 
 getProductRoute = do
   methodGET
   pathParam @Text `equals` "product"
-  name <- pathParam @(Name Product) -- This could just be Text, but we're using Haskell so...
+  name <- pathParam @(Name Product)
   pathEnd
   return name
   
@@ -85,20 +85,20 @@ I found the description of named routes in [this Laravel tutorial](https://www.j
 > It allows you to refer to the routes when generating URLs or redirects to the specific routes.
 > In short, we can say that the naming route is the way of providing a nickname to the route.
 
-Named routes are useful because they remove a point of developer error.
-To get an idea for what I mean, imagine we are web devlopers for a local pet store:
+To get an idea for why named routes are beneficial, let's imagine we are web devlopers for a local pet store:
  
-- We have a handler for the route `/petstore/reptile/snake` that returns a page of all our snakes
+- We have a handler for the route `/petstore/reptile/snake` that returns a page of all our snakes on sale
 - We have a special sale for snakes this week, so the manager wants a hyperlink to the `/petstore/reptile/snake` page on our homepage
 - We add the hyperlink `<a href="/petstore/reptile/snek">CUTE SNAKES FOR SALE</a>` to our homepage HTML template
-- We deploy the latest version of website and wait for the money from selling large amounts of pet snakes to roll in
+- We deploy the new version of the website and wait for the money from selling large amounts of pet snakes to roll in
 
 Unfortunately, we find out next week that the hyperlink we added was misspelled and snake sales were lower than expected.
 The manager of the pet store isn't happy.
 
 This is where named routes come in. They push the burden of making sure URLs are spelled correctly on to the computer. We do this by assigning
-our route definitions to identifiers that can be used in our HTML templates or redirects. Now if the named route's identifier is misspelled, the computer
-will be able let us know.
+our route definitions to identifiers that can be used in our HTML templates or redirects. When we refer to the identifier in our code, the correct URL for
+the route it was assigned is automatically generated. If we misspell the named route's identifier, the computer will be able let us know with an error like
+`Couldn't find variable misspelledVariableName`.
 
 Here's an example of named routes in Laravel:
 
