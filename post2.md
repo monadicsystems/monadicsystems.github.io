@@ -21,7 +21,7 @@ At the time, my response was:
 > Edit: Ah I see what you mean. As it is right now, named routes aren't available in Okapi, but they would be nice to have in the future.
 > I'm trying to think of a mechanism that I can use to implement them...I'll get back to you when I figure it out.
 
-I'm here today to report back on the solution I've chosen to solve this problem in Okapi.
+I'm here today to report back on a solution I found to solve this problem in Okapi.
 
 ## Routes and Handlers
 
