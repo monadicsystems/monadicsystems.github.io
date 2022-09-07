@@ -143,7 +143,7 @@ There a couple of issues with this though:
   The developer won't realize their mistake until the URL is tested or deployed and found by a user.
 
 - The developer can pass in extra parameters or not enough parameters, e.g. `route('profile', ['uid' => 1, 'foo' => 'bar', 'baz' => 420])`.
-  In Laravel, this generates the URL `/user/1/profile?foo=bar&baz=420`. This may cause some issues.
+  In Laravel, this generates the URL `/user/1/profile?foo=bar&baz=420`. This may cause some problems down the road.
 
 Some web frameworks in statically typed languages offer a solution to these issues that we'll call *type safe named routes*.
 Type safe named routes are similar to named routes, except they offer an extra layer of safety that catches developer errors at the best time: compile time.
