@@ -156,7 +156,103 @@ For the most part, Haskell web frameworks utilize one of these two techniques to
 
 Okapi proposes a third technique: bidirectional patterns.
 
+### Bidirectional Patterns Crash Course
+
+Bidirectional patterns are language constructs in Haskell that can be used to **construct** and **destructure** data.
+If you use Haskell, you define bidirectional patterns all the time. For example, when you define a data type like
+
+```haskell
+data Foo = Foo Text Int
+```
+
+you're creating a constructor that can be used to create values of that type
+
+```haskell
+myFoo = Foo "hello" 54
+```
+
+and a destructor (usually called a pattern) that's used for pattern matching on that type
+
+```haskell
+getTextFromFoo :: Foo -> Text
+getTextFromFoo (Foo text _) = text
+```
+
+There's also a way to define patterns without defining a data type.
+To do this we must use Haskell's `PatternSynonyms` extension. When this language extension is turned on, we gain the ability to define custom patterns for existing types. The syntax looks like this:
+
+```haskell
+pattern FooText :: Foo -> Text
+pattern FooText text <- Foo text _
+```
+
+As you can see, pattern declarations are similar to function declarations, but they are prefixed with the `pattern` keyword
+and must have an uppercase identifier, like data constructors. They can even have type signatures! You'll also notice that instead
+of a `=` preceding the body of the declaration, a `<-` is used instead. This reverse arrow is used when defining what's
+called a **unidirectional pattern**. Unidirectional patterns can only be used for deconstructing values. For example, let's redefine
+the function `getTextFromFoo` using our custom unidirectional pattern:
+
+```haskell
+getTextFromFoo :: Foo -> Text
+getTextFromFoo (FooText text) = text
+```
+
+If we try to use the same pattern to construct a value of type `Foo`, we will get a compiler error:
+
+```haskell
+myFoo = FooText "hello" -- THIS WON'T WORK BECAUSE FooText IS UNIDRECTIONAL! ONE WAY! NOT BOTH!
+```
+
+This makes sense because if we look at our `FooText` pattern declaration, there's no information about
+what should stand in for the second parameter of the `Foo` constructor. To remedy this, we can explicitly define the second parameter to the
+`Foo` constructor in our `FooText` pattern declaration using another syntax:
+
+```haskell
+pattern FooText :: Foo -> Text
+pattern FooText text <- Foo text _ -- How we DECONSTRUCT values of type Foo
+  where
+    FooText text = Foo text 9000   -- How we CONSTRUCT values of type Foo
+```
+
+Patterns declared using this syntax are called **explicit bidirectional patterns** because the programmer is explicitly defining how the pattern
+constructs and deconstructs a value. Now we can use `FooText` not only as a deconstructor, but a constructor as well:
+
+```haskell
+anotherFoo :: Foo
+anotherFoo = FooText "YEAH"
+
+-- >>> anotherFoo == Foo "YEAH" 9000
+-- True
+-- >>> anotherFoo == Foo "YEAH" 69
+-- False
+```
+
+Now, let's put ourselves in a scenario that would never happen. Suppose we needed a way to construct and deconstruct a values of type `Foo`, but in reverse.
+We can do this using another syntax for pattern declarations:
+
+```haskell
+pattern FlippedFoo :: Int -> Text -> Foo
+pattern FlippedFoo int text = Foo text int
+```
+
+Patterns declared in this manner are called **implicit bidirectional patterns**. Implicit bidirectional pattern declaration have a body prefixed with `=` instead of `<-`. This can only be done if all pattern variables on the LHS are used on the RHS. We can use `FlippedFoo` just `Foo`, except the parameters are
+in reverse order:
+
+```haskell
+-- >>> FlippedFoo 54 "Hello" == Foo "Hello" 54
+-- True
+-- >>> FlippedFoo 9000 "YEAH" == Foo "YEAH" 9000
+```
+
+Nice.
+
+### View Patterns Crash Course
+
+Yes, there's more! 
+
 ### How Okapi Does It
+
+In Okapi, type safe named routes are implemented using bidrec
 
 Type-safe URLs (or URIs) are URLs that can be constructed safely because they contain type information. Constructing URLs with string concatenation is error prone because the dynamic parts of the URL aren’t specifically typed, they are all of type String, and they are more prone to human error because typos within the String aren’t caught by the compiler. Let’s say our server handles the endpoint `/todo/:id`, where `:id` is a path parameter representing a todo ID number. If we want to link to the `/todo/:id` endpoint from one of our pages we need to construct the URL and add it to our HTML. With a plain string concatenation method, we could use a function like
 
