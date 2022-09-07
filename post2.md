@@ -150,17 +150,17 @@ Type safe named routes are similar to named routes, except they offer an extra l
 Although you can find implementations of type safe named routes in other statically typed languages, I'm most familiar with how web frameworks in Haskell do it.
 For the most part, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
 
-1. Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
-2. Type-level programming e.g. [Servant]()
+1. Metaprogramming via Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
+2. Type-level programming e.g. [Servant]() and [Spock]()
 
 Okapi proposes a third technique: bidirectional patterns.
 
 ## Type Safe Named Routes in Okapi
 
-Before we see examples of how type safe named routes work in Okapi, we must first understand two underappreciated language extensions
-`-XPatternSynonyms` and `-XViewPatterns`.
+Before we see examples of how type safe named routes work in Okapi, we must first understand two language extensions:
+`PatternSynonyms` and `ViewPatterns`.
 
-### Pattern Synonyms Crash Course
+### User-defined Patterns
 
 Bidirectional patterns are language constructs in Haskell that can be used to **construct** and **destructure** data.
 If you use Haskell, you define bidirectional patterns all the time. For example, when you define a data type like
@@ -172,6 +172,7 @@ data Foo = Foo Text Int
 you're creating a constructor that can be used to create values of that type
 
 ```haskell
+myFoo :: Foo
 myFoo = Foo "hello" 54
 ```
 
@@ -231,7 +232,7 @@ anotherFoo = FooText "YEAH"
 -- False
 ```
 
-Now, let's put ourselves in a scenario that would never happen. Suppose we needed a way to construct and deconstruct a values of type `Foo`, but in reverse.
+Suppose we needed a way to construct and deconstruct a values of type `Foo`, but with `Foo`'s parameters flipped.
 We can do this using another syntax for pattern declarations:
 
 ```haskell
@@ -255,10 +256,8 @@ Nice!
 
 Yes, there's more! We can make patterns even more powerful in Haskell using the `-XViewPatterns` language extenstion.
 When this language extension is turned on, we can pattern match on the *projection of a value* and not just the value itself.
-Let me clarify what I mean with a yet another contrieved scenario.
 
-The IRS now uses Haskell and through a strange series of events we find ourselves working for them to help find people who haven't
-been paying taxes. The IRS has stored information of everyone it knows about in a `Map` from the `containers` package, where the keys are social security numbers and the values are records of personal information:
+
 
 ```haskell
 data Person = Person
