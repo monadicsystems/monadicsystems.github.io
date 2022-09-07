@@ -9,7 +9,7 @@ summary: A blog post about how type-safe named routes are implemented in Okapi
 
 A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion to be had and I got lots of useful, constructive feedback.
-There was one comment on the post by u/n00bomb that interested me:
+There was one comment on the post by u/n00bomb that caught my attention:
 
 > How to do "Named Routes"?
 
