@@ -112,19 +112,54 @@ Route::get('/petstore/reptile/snake', function () {
 Now we can use the `snakesforsale` identifier in our templates (Laravel uses Blade templates) like so:
 
 ```html
-{% raw %}
 ...
-<a href="{{ route('snakesforsale') }}">CUTE SNAKES FOR SALE</a>
+{% raw %}<a href="{{ route('snakesforsale') }}">CUTE SNAKES FOR SALE</a>{% endraw %}
 ...
-{% endraw %}
 ```
 
-Named routes are also nice becasuse we can update the definition of a route without updating all of the places in the codebase where we refer to that route.
+Named routes are also useful becasuse we can update the definition of a route without updating all of the places in the codebase where we refer to that route.
 The definition may change, but as long as the route's identifier is the same we can rest assured that we have no broken links on our website (internal facing ones at least).
 
 ## Type Safe Named Routes
 
-Even better than named routes are *type safe named routes*.
+In the examples up until this point, we've looked at simple routes that didn't have any path parameters, like `/petstore/reptile/snake`.
+The question now is, how do we use named routes to handle URLs with path parameters? For example, let's say we need to implement a router for URLs of the form `/user/<uid>/profile` where `<uid>` is a path parameter representing a user's unique identifier. In Laravel, we could define our route for such a URL as follows:
+
+```php
+Route::get('/user/{uid}/profile', function ($uid) {
+    // handler logic
+})->name('profile');
+```
+
+To generate the URL for this named route, we use the `route` function just as we used it in the previous example, except now we also need to pass the function a map representing the URLs parameters:
+
+```php
+$linkToUser1Profile = route('profile', ['uid' => 1]);
+```
+
+There a couple of issues with this though:
+
+- We can't guarantee that `uid` is an integer.
+  What if the developer types `route('profile', ['uid' => 'lol'])` or `route('profile', ['uid' => 9.9])`?
+  The developer won't realize their mistake until the URL is tested or deployed and found by a user.
+
+- The developer can pass in extra parameters or not enough parameters, e.g. `route('profile', ['uid' => 1, 'foo' => 'bar', 'baz' => 420])`.
+  In Laravel, this generates the URL `/user/1/profile?foo=bar&baz=420`. This may cause some issues.
+
+Some web frameworks in statically typed languages offer a solution to these issues that we'll call *type safe named routes*.
+Type safe named routes are similar to named routes, except they offer an extra layer of safety that catches developer errors at the best time: compile time.
+
+Although you can find implementations of type safe named routes in other statically typed languages, we'll be covering how web frameworks in Haskell do it.
+For the most part, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
+
+1. Template Haskell
+2. Type-level programming
+
+### Type Safe Named Routes in Yesod
+
+### Type Safe Named Routes in Servant
+
+### How Okapi Does It
 
 Type-safe URLs (or URIs) are URLs that can be constructed safely because they contain type information. Constructing URLs with string concatenation is error prone because the dynamic parts of the URL aren’t specifically typed, they are all of type String, and they are more prone to human error because typos within the String aren’t caught by the compiler. Let’s say our server handles the endpoint `/todo/:id`, where `:id` is a path parameter representing a todo ID number. If we want to link to the `/todo/:id` endpoint from one of our pages we need to construct the URL and add it to our HTML. With a plain string concatenation method, we could use a function like
 
@@ -185,6 +220,8 @@ Dispatching on other parts of the Request
 By default, Okapi exposes a route function that takes a function that dispatches the correct handler based on the path. Users of Okapi can create a custom route function that allows them to dispatch on any part of the request, like the method, query parameters, and/or headers. For example, let’s create a route function that matches against the request method, path, and query parameters.
 
 Another upside to this approach to the type-safe URL problem is that it is extensible unlike other approaches. Most frameworks only allow matching on the request path. This all you need most of the time, but if you need the extra functionality for whatever reason, Okapi has it. Depending on the needs of the developer, they can dispatch on the different parts of the request they care about, and create patterns for them.
+
+## Conclusion
 
 
 
