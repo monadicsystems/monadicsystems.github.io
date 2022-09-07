@@ -156,7 +156,12 @@ For the most part, Haskell web frameworks utilize one of these two techniques to
 
 Okapi proposes a third technique: bidirectional patterns.
 
-### Bidirectional Patterns Crash Course
+## Type Safe Named Routes in Okapi
+
+Before we see examples of how type safe named routes work in Okapi, we must first understand two underappreciated language extensions
+`-XPatternSynonyms` and `-XViewPatterns`.
+
+### Pattern Synonyms Crash Course
 
 Bidirectional patterns are language constructs in Haskell that can be used to **construct** and **destructure** data.
 If you use Haskell, you define bidirectional patterns all the time. For example, when you define a data type like
@@ -235,20 +240,39 @@ pattern FlippedFoo :: Int -> Text -> Foo
 pattern FlippedFoo int text = Foo text int
 ```
 
-Patterns declared in this manner are called **implicit bidirectional patterns**. Implicit bidirectional pattern declaration have a body prefixed with `=` instead of `<-`. This can only be done if all pattern variables on the LHS are used on the RHS. We can use `FlippedFoo` just `Foo`, except the parameters are
-in reverse order:
+Patterns declared in this manner are called **implicit bidirectional patterns**. Implicit bidirectional pattern declarations have a RHS prefixed with `=` instead of `<-`. This can only be done if all pattern variables on the LHS are used on the RHS. We can use `FlippedFoo` just like `Foo`,
+except the parameters are in reverse order:
 
 ```haskell
 -- >>> FlippedFoo 54 "Hello" == Foo "Hello" 54
 -- True
 -- >>> FlippedFoo 9000 "YEAH" == Foo "YEAH" 9000
+-- True
 ```
 
-Nice.
+Nice!
 
 ### View Patterns Crash Course
 
-Yes, there's more! 
+Yes, there's more! We can make patterns even more powerful in Haskell using the `-XViewPatterns` language extenstion.
+When this language extension is turned on, we can pattern match on the *projection of a value* and not just the value itself.
+Let me clarify what I mean with a yet another contrieved scenario.
+
+The IRS now uses Haskell and through a strange series of events we find ourselves working for them to help find people who haven't
+been paying taxes. The IRS has stored information of everyone it knows about in a `Map` from the `containers` package, where the keys are social security numbers and the values are records of personal information:
+
+```haskell
+data Person = Person
+  { name :: Text
+  , salary :: Float
+  , address :: Text
+  }
+
+irsMap :: Map Int Person
+irsMap = fromList [ -- everyone in the U.S. ]
+```
+
+We must sift through the map and find everyone making less than a million dollars a year so we can tax them.
 
 ### How Okapi Does It
 
