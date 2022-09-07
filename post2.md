@@ -1,11 +1,11 @@
 ---
-title: Type-safe Named Routes Using Bidrectional Patterns
+title: Type Safe Named Routes Using Bidrectional Patterns
 author: Rashad Gover
 image: /logo-bg.png
 summary: A blog post about how type-safe named routes are implemented in Okapi
 ---
 
-# Type-safe Named Routes Using Bidirectional Patterns
+# Type Safe Named Routes Using Bidirectional Patterns
 
 A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion to be had and I got lots of useful, constructive feedback.
