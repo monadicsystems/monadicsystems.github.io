@@ -6,6 +6,9 @@ summary: A blog post about type safe named routes in Okapi
 
 # Type Safe Named Routes Using Patterns: Part II
 
+In Part I, we pondered the motivation for type safe named routes and how they work in other frameworks like Yesod and Servant.
+Now we can talk about how type safe named routes are implemented in Okapi.
+
 ## Patterns On Steroids
 
 Before we see examples of how type safe named routes work in Okapi, we must first understand two language extensions
