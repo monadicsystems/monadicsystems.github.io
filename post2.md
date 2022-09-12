@@ -4,7 +4,7 @@ image: /logo-bg.png
 summary: A blog post about type safe named routes in Okapi
 ---
 
-# Type Safe Named Routes Using Patterns
+# Type Safe Named Routes Using Patterns: Part I
 
 A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion to be had and I got lots of useful, constructive feedback.
@@ -155,4 +155,4 @@ For the most part, Haskell web frameworks utilize one of these two techniques to
 
 Okapi proposes a third technique: bidirectional patterns.
 
-[To be continued...]()
+[To be continued...](/post3)
