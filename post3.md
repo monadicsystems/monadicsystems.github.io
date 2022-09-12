@@ -125,11 +125,11 @@ favoriteColors = Map.fromList [("Bob", Blue), ("Alice", Yellow), ("Larry", Yello
 ```
 
 and we want to see if a specific person's favorite color is `Blue` using view patterns.
-First, we need to define what I call a **view function**. The view function is what we'll use in the view pattern to project a property of the data structure that we want to pattern match on. We'll call this view function `viewColor`:
+First, we need to define what I call a **projection function**. The projection function is what we'll use in the view pattern to project a property of the data structure that we want to pattern match on. We'll call this view function `projectolor`:
 
 ```haskell
-viewColor :: Text -> Map.Map Text Color -> (Maybe Color, Map.Map Text Color)
-viewColor name colorMap = case Map.lookup name colorMap of
+projectColor :: Text -> Map.Map Text Color -> (Maybe Color, Map.Map Text Color)
+projectColor name colorMap = case Map.lookup name colorMap of
   Nothing    -> (Nothing, colorMap)
   Just color -> (Just color, Map.delete (name, color) colorMap)
 ```
@@ -139,9 +139,9 @@ It takes a name of type `Text`, a `Map` from `Text` to `Color`, and returns eith
 1. A `Color` value wrapped with `Just` if it's found in the `Map`, and a new `Map` with the entry that was found deleted from it
 2. `Nothing`, and the original `Map` that was passed into the view function
 
-The return type of the view function is important because that's what we'll be pattern matching on in our view pattern.
+The return type of the projection function is important because that's what we'll be pattern matching on in our view pattern.
 
-Now let's use our view function in a view pattern.
+Now let's use `projectColor` in a view pattern.
 
 ```haskell  
 favoriteColorIsBlue :: Text -> Map.Map Text Color -> Bool
@@ -149,9 +149,13 @@ favoriteColorIsBlue name (viewColor name -> (Just Blue, _)) = True
 favoriteColorIsBlue _ _ = False
 ```
 
-You'll notice on the first line of our function declaration, in place of the second parameter, there's a call to our `viewColor name` function followed by a `->`. That's a view pattern. We're applying our view function `viewColor name` to the argument and pattern matching on the result tuple by using `->`. Note how function currying is being used to our advantadge here. The type of `viewColor` is `Text -> Map Text Color -> (Maybe Color, Map Text Color)`, but the type of `viewColor name` is `Map Text Color -> (Maybe Color, Map Text Color)` which allows us to use it in this view pattern. Also note how we can pass in any variables on the RHS into the view function that's used in our view pattern. The pattern after the `->` is for matching on the tuple result of the view function. In this case we just want to match on `Just Blue` and ignore the new `Map Text Color` value.
+You'll notice on the first line of our function declaration, in place of the second parameter, there's an application of our `projectColor` function followed by a `->`. That's a view pattern. We're applying our projection function `projectColor name` to the argument and pattern matching on the result by using `->`.
 
-You may be wondering, "Why put all that logic into a pattern and not just use a regular function?". Well, this is a contreived example so I agree with you.
+Notice how function currying is being used to our advantadge here. The type of `projectColor` is `Text -> Map Text Color -> (Maybe Color, Map Text Color)`, but the type of `projectColor name` is `Map Text Color -> (Maybe Color, Map Text Color)` which allows us to use it in this view pattern. Also notice how we can pass in any variables on the RHS into the view function that's used in our view pattern. In this case, it's `name`.
+
+The pattern after the `->` is for matching on the tuple result of the projection function. In this case we just want to match on `Just Blue` and ignore the new `Map Text Color` value.
+
+You may be wondering, "Why put all that logic into a pattern and not just use a regular function?". Well, this is a contrived example so I agree with you.
 The benefit of using view patterns is that you can create abstractions that you wouldn't be able to otherwise. In some cases, a solution using view patterns can be more concise and allow more code reuse. For example, let's say we wanted to create a function that takes the names of two people, a map of everyone's favorite color, and returns whether or not the two people would get along based on their color preferences:
 
 ```haskell
@@ -173,71 +177,214 @@ see what color the second likes. Remember how our projection function `viewColor
 
 ## How Okapi Uses Patterns For Type Safe Named Routes
 
+In Okapi, type safe named routes are implemented using the language extensions we defined above. It works becuase we can use the same "identifier", a bidirectional pattern, to deconstruct and construct an HTTP request.
 
+Okapi exports a function `route` with the type signature:
 
-In Okapi, type safe named routes are implemented using bidrec
-
-Type-safe URLs (or URIs) are URLs that can be constructed safely because they contain type information. Constructing URLs with string concatenation is error prone because the dynamic parts of the URL aren’t specifically typed, they are all of type String, and they are more prone to human error because typos within the String aren’t caught by the compiler. Let’s say our server handles the endpoint `/todo/:id`, where `:id` is a path parameter representing a todo ID number. If we want to link to the `/todo/:id` endpoint from one of our pages we need to construct the URL and add it to our HTML. With a plain string concatenation method, we could use a function like
-
-
-```
-renderTodoIDURL :: Text -> Text
-renderTodoIDURL id = “/todo/” <> id
-```
-
-Which would be bad because we would be free to do something that doesn’t make sense, like `renderTodoIDURL “dog”` or `renderTodoIDURL “onehundred”`. To fix this we could do something like
-
-```
-renderTodoIDURL :: Int -> Text
-renderTodoIDURL id = “/todo/” <> show id
-```
-Where the Text is replaced with an Int. Now we remove the possibility of doing anything like `renderTodoIDURL “abc”`. Even better would be replacing the Int with the newtype TodoID or Natural.
-
-We’ve made the URL generation function more type safe which is great, but what happens if we update our handler to handle the endpoint `/task/:id` instead of `/todo/:id`? Well in order for our URL generation to work properly we would have to update the function `renderTodoIDURL` to
-
-```
-renderTodoIDURL :: Int -> Text -- We should change the name too, but let’s skip that for now
-renderTodoIDURL id = “/task/” <> show id
+```haskell
+route ::
+  MonadOkapi m =>
+  m a ->
+  -- ^ Parser
+  (a -> Handler m) ->
+  -- ^ Dispatcher
+  Handler m
 ```
 
-Notice how if we change our handler, we have to make a change to the URL rendering function too. We have to make changes in at least two places. This is another downside to this method. If the handler and URL rendering function are defined close to each other this might not be bad, but we’d have to rely on developers to keep them close. Another downside is that we get no help from the compiler if we make this change. We could’ve updated the handler and forgot to update the URL rendering function, and deployed our app!
-How Haskell Web Frameworks solve this issue
+`route` takes a *parser* that's used to parse data from the HTTP request, and a *dispatcher* that's used to choose the correct handler based on the data parsed by the parser function passed in as the first parameter.
 
-Various Haskell web frameworks solve this issue to various degrees using various methods. The two main language features that Haskell web frameworks use to solve the type-safe URL problem are:
+The simplest way to use `route` is to give it the `path` parser, and a function that matches the path parsed from the request (a list of `Text`) to the appropriate handler.
 
-Type-level programming
-Template Haskell
+```haskell
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-How Okapi solves the problem
+module Main where
 
-Okapi proposes using an underused language feature for solving this problem: bidrectional patterns.
+import Okapi
 
-Bidirectional patterns are patterns that can be used to deconstruct and construct data in Haskell.
-
-Okapi provides a function called `route :: (Path -> Handler m) -> Handler m` that is meant to be used with the LambdaCase language extension to match a path to a `Handler m`. An example of it being used:
-
+main :: IO ()
+main = run id $ route path $ \case
+  ["home"] -> do
+    methodGET
+    return ok
+  ["introduce", name] -> do
+    methodGET
+    redirect 302 $ "/greet/" <> name
+  ["greet", name] -> do
+    methodGET
+    return $ setPlaintext ("Hello " <> name) $ ok
+  ["greet"] -> do
+    methodGET
+    maybeName <- optional $ queryParam "name"
+    let greeting = case maybeName of
+      Nothing   -> "Hello, Stranger."
+      Just name -> "Hello, " <> name <> "."
+    return $ setPlaintext greeting $ ok
+  _ -> next
 ```
-myServer = route $ \case
-  TodoRoute -> …
-  TodoByIDRoute todoID -> …
-  _ -> skip
+
+The `LambdaCase` extension is perfect here because we can define functions that only do pattern matching in a more concise way. It allows us to skip the boilerplate code required to bind the lambda argument and pattern match on it with a `case` statement. We can just use `\case`.
+
+This is cool, but we can do better by using type safe named routes. One of our handlers returns a redirect to another handler on our server, so let's use a bidirectional pattern to make sure the redirect is guaranteed to redirect the user to a valid location.
+
+```haskell
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module Main where
+
+import Okapi
+
+pattern HomeRoute = ["home"]
+
+pattern IntroduceRoute name = ["introduce", name]
+
+pattern GreetNameRoute name = ["greet", name]
+
+pattern GreetOptionalNameRoute = ["greet"]
+
+main :: IO ()
+main = run id $ route path $ \case
+  HomeRoute -> do
+    methodGET
+    return ok
+  IntroduceRoute name -> do
+    methodPOST
+    redirect 302 $ renderPath $ GreetRoute name
+  GreetRoute name -> do
+    methodGET
+    return $ setJSON ("Hello " <> name) $ ok
+  GreetOptionalNameRoute -> do
+    methodGET
+    maybeName <- optional $ queryParam "name"
+    let greeting = case maybeName of
+      Nothing   -> "Hello, Stranger."
+      Just name -> "Hello, " <> name <> "."
+    return $ setJSON greeting $ ok
+  _ -> next
 ```
 
-The same patterns that we use to pattern match on the path can be used to construct URLs as well.
+We pattern match on the request path using the custom patterns we defined. We also use the same patterns to construct the URLs to those handlers. Since our custom patterns construct and deconstruct the `Path` type, we use the `renderPath` function when generating the URL for our custom patterns.
 
-Since the pattern is the deconstructor and constructor, if we update the pattern we’re updating the handler and the URL generator at the same time.
+What do we do if the path parameters are a type other than `Text`? In the above example, the `name` path parameter has the type `Text`. What if requirements changed and we needed to identify people using an identifier of type `Int`? Okapi exports the pattern `PathParam` that's perfect for situations when we want to match on a path parameter that's of a type other than `Text`:
 
-If the patterns are implicitly bidirectional, you only have to make a change in one place to update the deconstructor and constructor. Nice!
+```haskell
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-There are cases where you might have to make a pattern explicitly bidirectional. This means the deconstructor and constructor have different definitions, but still the same type. Updates to one may require a change in the other, so you will updating two places at most when you make a change like with our original handler and URL generation function. The good thing is that they are defined right next to each other and their placement in the source code is enforced by the compiler. Type mismatches will be caught by the compiler too. Value mismatches can slip through though if the constructor and deconstructor have the same type.
+module Main where
 
-Dispatching on other parts of the Request
+import Okapi
 
-By default, Okapi exposes a route function that takes a function that dispatches the correct handler based on the path. Users of Okapi can create a custom route function that allows them to dispatch on any part of the request, like the method, query parameters, and/or headers. For example, let’s create a route function that matches against the request method, path, and query parameters.
+pattern HomeRoute = ["home"]
 
-Another upside to this approach to the type-safe URL problem is that it is extensible unlike other approaches. Most frameworks only allow matching on the request path. This all you need most of the time, but if you need the extra functionality for whatever reason, Okapi has it. Depending on the needs of the developer, they can dispatch on the different parts of the request they care about, and create patterns for them.
+pattern IntroduceRoute pid = ["introduce", PathParam pid]
+-- ^ Uses @PathParam@ pattern to match on values of any type that implement the @ToHttpApiData@ and @FromHttpApiData@ type classes.
+
+pattern GreetNameRoute pid = ["greet", PathParam pid]
+
+pattern GreetOptionalNameRoute = ["greet"]
+
+main :: IO ()
+main = run id $ route path $ \case
+  HomeRoute -> do
+    methodGET
+    return ok
+  IntroduceRoute pid -> do
+    methodPOST
+    redirect 302 $ renderPath $ GreetRoute pid
+  GreetRoute pid -> do
+    methodGET
+    return $ setJSON pid $ ok
+  GreetOptionalNameRoute -> do
+    methodGET
+    maybePid <- optional $ queryParam "pid"
+    let returnPid = case maybePid of
+      Nothing  -> -1
+      Just pid -> pid
+    return $ setJSON returnPid $ ok
+  _ -> next
+```
+
+Sweet. The above example is the simplest case of type safe named routes in Okapi. What if we want to pattern match on properties of the request other than
+the path? This would be useful in cases where we have forms, like in a todo app for example. If we can pattern match on the request method and request path, we can create type safe form actions to put in our HTML. First we have to define the parser to pass to the `route` function:
+
+```haskell
+methodAndPath :: MonadOkapi m => m (Method, Path)
+methodAndPath = do
+  m <- method
+  p <- path
+  return (m, p)
+```
+
+It's a parser that returns a tuple of `Method` and `Path`. Now, we need to pass the `route` function a lambda that matches on values of type `(Method, Path)` and returns the correct handler. Let's use pattern synonyms again. To help match on the `Method`, Okapi exports pattern synonyms for each of the request methods, like `GET` and `POST`:
+
+```haskell
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module Main where
+
+import Okapi
+
+data Todo = Todo
+  { todoID :: Int
+  , todoText :: Text
+  }
+  
+newtype TodoForm = TodoForm { todoFormText :: Text }
+
+pattern GetTodos = (GET, ["todos"])
+
+pattern GetTodo tID = (GET, ["todos", PathParam tID])
+
+pattern PostTodo = (POST, ["todos"])
+
+pattern PatchTodo tID = (PATCH, ["todos", PathParam tID])
+
+pattern DeleteTodo tID = (DELETE, ["todos", PathParam tID])
+
+methodAndPath :: MonadOkapi m => m (Method, Path)
+methodAndPath = do
+  m <- method
+  p <- path
+  return (m, p)
+  
+renderRedirect :: (Method, Path) -> Text
+renderRedirect (_, p) = renderPath p
+
+renderFormAction :: (Method, Path) -> Text
+renderFormAction (m, p) = undefined
+
+main :: IO ()
+main = run id $ route methodAndPath $ \case
+  GetTodos -> do
+    todos <- liftIO $ queryAllTodos
+    return $ setJSON todos $ ok
+  GetTodo tID -> do
+    maybeTodo <- liftIO $ queryTodo tID
+    case maybeTodo of
+      Nothing   -> return notFound
+      Just todo -> return $ setJSON todo $ ok
+  PostTodo -> do
+    todoForm <- bodyForm @TodoForm
+    maybeNewTodo <- liftIO $ insertTodoForm todoForm
+    case maybeNewTodo of
+      Nothing      -> return notFound
+      Just newTodo -> return $ setJSON newTodo $ ok
+  PatchTodo tID -> do
+    todoForm <- bodyForm @TodoForm
+    maybePatchedTodo <- liftIO $ updateTodo tID todoForm
+    case maybePatchedTodo of
+      Nothing      -> return notFound
+      Just patchedTodo -> return $ setJSON patchedTodo $ ok
+  DeleteTodo tID -> do
+    maybeDeleted <- liftIO $ deleteTodo tID
+    case maybeDeleted of
+      Nothing -> return notFound
+      Just _  -> redirect $ renderRedirect GetTodos
+  _ -> next
+```
 
 ## Conclusion
-
-
-
