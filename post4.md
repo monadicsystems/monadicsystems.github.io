@@ -1,5 +1,5 @@
 ---
-title: Type Safe Named Routes Using Patterns: Part II
+title: Type Safe Named Routes Using Patterns: Part III
 image: /logo-bg.png
 summary: A blog post about type safe named routes in Okapi
 ---
