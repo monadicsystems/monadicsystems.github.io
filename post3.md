@@ -135,7 +135,7 @@ favoriteColors = fromList [("Bob", Blue), ("Alice", Yellow), ("Larry", Yellow)]
 
 and we want to see if a specific person's favorite color is `Blue`. We could just use a traditional function, but let's try to solve this using view patterns.
 
-First, we need to define what I call a **projection function**. The projection function is what we'll use in the view pattern to project a property of the data structure that we want to pattern match on. We'll call this view function `projectColor`:
+First, we need to define what I call a **projection function**. The projection function is what we'll use in the view pattern to project a property of the data structure that we want to pattern match on. We'll call this projection function `projectColor`.
 
 ```haskell
 projectColor :: Text -> Map Text Color -> (Maybe Color, Map.Map Text Color)
@@ -146,7 +146,7 @@ projectColor name colorMap = case Map.lookup name colorMap of
 
 It takes a name of type `Text`, a `Map` from `Text` to `Color`, and returns either one of these tuples:
 
-1. `Nothing`, and the original `Map` that was passed into the view function
+1. `Nothing`, and the original `Map` that was passed into the projection function
 2. A `Color` value wrapped with `Just` if it's found in the `Map`, and a new `Map` with the entry that was found deleted from it
 
 The return type of the projection function is important because that's what we'll be pattern matching on in our view pattern.
