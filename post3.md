@@ -327,7 +327,7 @@ the path?
 
 Imagine we had a cooking recipe app with two types of forms, one for querying recipes and another for submitting new recipes. The HTML for the two forms would look like this.
 
-```haskell
+```html
 <form action="/recipe" method="post">
   ...
 </form>
@@ -339,7 +339,7 @@ Imagine we had a cooking recipe app with two types of forms, one for querying re
 
 If we could pattern match on the request method and request path, we could safely generate type safe form attributes for our HTML forms too. Just like how we generated the URL for our redirect in the previous example.
 
-```haskell
+```html
 <form {renderFormAttributes PostRecipeRoute}>
   ...
 </form>
