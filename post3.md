@@ -38,7 +38,7 @@ getTextFromFoo (Foo text _) = text
 ```
 
 There's also a way to define patterns without defining a data type.
-To do this we must use Haskell's `-XPatternSynonyms` language extension. When this language extension is turned on, we gain the ability to define custom patterns for existing types. The syntax looks like this:
+To do this we must use Haskell's `-XPatternSynonyms` language extension. When this language extension is turned on we gain the ability to define custom patterns for existing types. The syntax looks like this:
 
 ```haskell
 pattern FooText :: Foo -> Text
@@ -119,7 +119,7 @@ Nice!
 ### -XViewPatterns
 
 Yes, there's more! We can make patterns even more powerful in Haskell using the `-XViewPatterns` language extenstion.
-When this language extension is turned on, we can pattern match on the *projection of a value* and not just the value itself.
+When this language extension is turned on we can pattern match on the *projection of a value* and not just the value itself.
 This is useful for pattern matching on data structures, like values of the `Map` type from the `containers` package.
 
 Suppose we have a map representing the favorite colors of random people,
