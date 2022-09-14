@@ -167,6 +167,6 @@ For the most part, Haskell web frameworks utilize one of these two techniques to
 1. Metaprogramming via Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
 2. Type-level programming e.g. [Servant]() and [Spock]()
 
-Okapi proposes a third technique: bidirectional patterns.
+Okapi proposes a third technique: patterns.
 
 [To be continued...](/post3)
