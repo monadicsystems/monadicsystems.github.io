@@ -20,7 +20,21 @@ At the time, my response was:
 > Edit: Ah I see what you mean. As it is right now, named routes aren't available in Okapi, but they would be nice to have in the future.
 > I'm trying to think of a mechanism that I can use to implement them...I'll get back to you when I figure it out.
 
-I'm here today to report back on a solution I found to solve this problem in Okapi.
+I think I've found a solution that I like so I'll be covering it from motivation, to implementation, to practical use cases in a series of three essays:
+
+1. Part I (the one you're currently reading)
+
+   I cover the motivation for type safe named routes and briefly give an idea of how they're implemented in some other web frameworks. Skip to Part II if you're already familiar with this.
+
+2. [Part II](/post3)
+
+   I go over the `-XPatternSynonyms` and `-XViewPatterns` language extensions and how they are used to implement type safe named routes in Okapi.
+
+3. [Part III](/post4)
+
+   I go over more advanced uses of type safe named routes in Okapi, like using them with [htmx]().
+   
+Enjoy!
 
 ## Routes and Handlers
 
