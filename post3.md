@@ -179,15 +179,15 @@ People who like Yellow get along with everybody
 People who like Red can only get along with people who like Yellow
 -}
 getsAlong :: Text -> Text -> Map.Map Text Color -> Bool
-getsAlong person1 person2 (projectColor person1 -> (Just Yellow, viewColor person2 -> (Just _, _))) = True
-getsAlong person1 person2 (projectColor person1 -> (Just Red, viewColor person2 -> (Just Yellow, _))) = True
-getsAlong person1 person2 (projectColor person1 -> (Just Blue, viewColor person2 -> (Just Blue, _))) = True
-getsAlong person1 person2 (projectColor person1 -> (Just Blue, viewColor person2 -> (Just Yellow, _))) = True
+getsAlong person1 person2 (projectColor person1 -> (Just Yellow, projectColor person2 -> (Just _, _))) = True
+getsAlong person1 person2 (projectColor person1 -> (Just Red, projectColor person2 -> (Just Yellow, _))) = True
+getsAlong person1 person2 (projectColor person1 -> (Just Blue, projectColor person2 -> (Just Blue, _))) = True
+getsAlong person1 person2 (projectColor person1 -> (Just Blue, projectColor person2 -> (Just Yellow, _))) = True
 getsAlong _ _ = False
 ```
 
 Notice how we can nest view patterns. In this case, we're looking for two people in a map to see if they would get along. We use a view pattern on the map passed into the function to see what color the first person likes. Then we use the same view pattern again on the new map returned by the first view pattern and 
-see what color the second person likes. Remember how our projection function `projectColor` deletes an entry in the map if it was found? This is where it comes in handy: when we want to project values out of a data structure multiple times.
+see what color the second person likes. Remember how our projection function `projectColor` deletes an entry in the map if it was found? This is where it comes in handy: when we want to project different values out of a data structure multiple times.
 
 ## How Okapi Uses Patterns For Type Safe Named Routes
 
@@ -348,5 +348,7 @@ If we could pattern match on the request method and request path, we could safel
   ...
 </form>
 ```
+
+This would ensure that all form actions in our HTML are valid.
 
 [To be continued...](/post4)
