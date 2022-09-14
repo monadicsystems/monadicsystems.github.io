@@ -120,7 +120,7 @@ Nice!
 
 Yes, there's more! We can make patterns even more powerful in Haskell using the `-XViewPatterns` language extenstion.
 When this language extension is turned on, we can pattern match on the *projection of a value* and not just the value itself.
-This useful for pattern matching on data structures, like values of the `Map` type from the `containers` package.
+This is useful for pattern matching on data structures, like values of the `Map` type from the `containers` package.
 
 Suppose we have a map representing the favorite colors of random people,
 
