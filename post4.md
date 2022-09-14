@@ -15,7 +15,7 @@ on other request information besides the path.
 
 ## Type Safe Form Attributes
 
-At the end of Part II, we left off with this interesting thought:
+At the end of Part II, we left off with this interesting thought.
 
 > Imagine we had a cooking recipe app with two types of forms, one for querying recipes and another for submitting new recipes.
 > The HTML for the two forms would look like this.
@@ -43,7 +43,69 @@ At the end of Part II, we left off with this interesting thought:
 >
 > This would ensure that all form actions in our HTML are valid.
 
-Let's implement this thought. First, we have to define the parser to pass to the `route` function:
+To implement this thought let's model what a recipe is, and declare our pattern synonyms for the routes.
+To help with pattern matching on the request method Okapi exports bidirectional patterns for all request methods, like `GET` and `POST`.
+
+```haskell
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+
+module Main where
+
+import Okapi
+
+data Recipe = Recipe
+  { recipeName :: Text
+  , recipeIngredients :: [Text]
+  , recipeDetail :: Text
+  , recipeCookTime :: Int -- ^ Cook time of the recipe in minutes
+  }
+
+pattern HomeRoute = (GET, [""]) -- ^ @[""]@ represents the trailing slash e.g. www.example.com/
+
+pattern QueryRecipesRoute = (GET, ["recipes"])
+
+pattern PostRecipesRoute = (POST, ["recipes"])
+```
+
+Now that we've defined our route patterns, let's implement our rendering functions. Now, we will have two rendering functions: one for generating URLs and one for generating HTML form actions.
+
+```haskell
+renderURL :: (Method, Path) -> Text
+renderURL (_, p) = renderPath p
+
+renderFormAttrs :: (Method, Path) -> Text
+renderFormAttrs (m, p) = renderAction p <> " " <> renderMethod m
+  where
+    renderAction p = "action=\"" <> renderPath p <> "\""
+    renderMethod = \case
+      POST -> "method=\"" <> "post" <> "\""
+      _    -> "method=\"" <> "get" <> "\"" -- ^ method="get" is the default method for forms
+```
+
+Sweet! You might be thinking,
+
+> Hmmmm, I thought the appeal of type safe named routes was that we remove the possibility of developer error.
+> In this case, we're implementing these rendering functions ourselves.
+> Couldn't the developer make a mistake here that isn't caught by the compiler?
+> What if the string concatenation in the implementation of `renderFormAction` isn't correct?
+
+This is true, the developer can make mistakes when implementing custom rendering functions and they may not be caught by the compiler.
+Still, I believe this is better than plain string concatenation because it's much easier to test and find potential bugs in the implementation.
+We can use basic unit tests to see that the rendering functions generate the correct string.
+It's a lot harder to test if we have string concatenation directly in the HTML template. We can only manually test the web application, or look at the generated HTML to see if the strings were concatenated correctly.
+
+Also, consider the case where we have to use these generated URLs and form actions in multiple places.
+With the custom rendering functions, we just have to implement them once, test them if we see the need, and be done with it. If we do find bugs in the URLs/form actions in the future, we just have to reimplement the rendering function that's causing it.
+If we were to use string concatenation directly in our HTML template, in multiple places, we'd risk introducing a bug each time we need generate a URL/form action. We'd also have to update the same code in multiple places if we were to make any change to our URL structure. This is no good.
+
+Now that we have our route patterns and rendering functions, let's implement the parser and dispatcher function that we're passing to `route`.
+Remember, the type of the `route` function is `MonadOkapi m => m a -> (a -> Handler m) -> Handler m` where the first argument is the parser and the second
+argument is the dispatcher.
+
+For the parser, we want to return the request method and request path because that what we've defined our pattern synonyms to match on;
+a value of type `(Method, Path)`.
 
 ```haskell
 methodAndPath :: MonadOkapi m => m (Method, Path)
@@ -53,14 +115,12 @@ methodAndPath = do
   return (m, p)
 ```
 
-It's a parser that returns a tuple of `Method` and `Path`. Now, we need to pass the `route` function a lambda that matches on values of type `(Method, Path)` and returns the correct handler. We called this the dispatcher.
-
-To do this, let's use `-XPatternSynonyms` and `-XLambdaCase` again just like last time.
-To help with pattern matching on the request method Okapi exports bidirectional patterns for all of the request methods, like `GET` and `POST`.
+Brilliant. Now we can define the dispatcher function using `-XLambdaCase`, and feed that in to the `route` function directly to bring everything together.
 
 ```haskell
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -79,49 +139,57 @@ pattern QueryRecipesRoute = (GET, ["recipes"])
 
 pattern PostRecipesRoute = (POST, ["recipes"])
 
+renderURL :: (Method, Path) -> Text
+renderURL (_, p) = renderPath p
+
+renderFormAttrs :: (Method, Path) -> Text
+renderFormAttrs (m, p) = renderAction p <> " " <> renderMethod m
+  where
+    renderAction p = "action=\"" <> renderPath p <> "\""
+    renderMethod = \case
+      POST -> "method=\"" <> "post" <> "\""
+      _    -> "method=\"" <> "get" <> "\"" -- ^ method="get" is the default method for forms
+      
 methodAndPath :: MonadOkapi m => m (Method, Path)
 methodAndPath = do
   m <- method
   p <- path
   return (m, p)
-  
-renderURL :: (Method, Path) -> Text
-renderURL (_, p) = renderPath p
-
-renderFormAction :: (Method, Path) -> Text
-renderFormAction (GET, p)  = "action=\"" <> renderPath p <> "\"" <> " " <> "method=\"" <> "get" <> "\"" 
-renderFormAction (POST, p) = "action=\"" <> renderPath p <> "\"" <> " " <> "method=\"" <> "get" <> "\""
-renderFormAction (_, p) = 
 
 main :: IO ()
 main = run id $ route methodAndPath $ \case
-  GetTodos -> do
-    todos <- liftIO $ queryAllTodos
-    return $ setJSON todos $ ok
-  GetTodo tID -> do
+  HomeRoute -> do
+    let html =
+      [qq|
+          <h1>Recipes Home</h1>
+          <hr>
+          <h2>Query Recipes</h2>
+          <form {renderFormAttrs QueryRecipesRoute}>
+            ...
+          </form>
+          <hr>
+          <h2>Create New Recipes</h2>
+          <form {renderFormAttrs PostRecipesRoute}>
+            ...
+          </form>
+      |]
+    return $ setHTML html $ ok
+  QueryRecipesRoute -> do
     maybeTodo <- liftIO $ queryTodo tID
     case maybeTodo of
       Nothing   -> return notFound
       Just todo -> return $ setJSON todo $ ok
-  PostTodo -> do
+  PostRecipesRoute -> do
     todoForm <- bodyForm @TodoForm
     maybeNewTodo <- liftIO $ insertTodoForm todoForm
     case maybeNewTodo of
       Nothing      -> return notFound
       Just newTodo -> return $ setJSON newTodo $ ok
-  PatchTodo tID -> do
-    todoForm <- bodyForm @TodoForm
-    maybePatchedTodo <- liftIO $ updateTodo tID todoForm
-    case maybePatchedTodo of
-      Nothing      -> return notFound
-      Just patchedTodo -> return $ setJSON patchedTodo $ ok
-  DeleteTodo tID -> do
-    maybeDeleted <- liftIO $ deleteTodo tID
-    case maybeDeleted of
-      Nothing -> return notFound
-      Just _  -> redirect $ renderRedirect GetTodos
   _ -> next
 ```
+
+For the HTML templating in this example I'm using the `interpolatedstring-perl6` package.
+This package makes it really easy to interpolate Haskell expressions in multiline strings.
 
 ### -XViewPatterns
 
