@@ -1,10 +1,10 @@
 ---
-title: Type Safe Named Routes Using Patterns: Part I
+title: Named Routes in Okapi: Part I
 image: /logo-bg.png
 summary: A blog post about type safe named routes in Okapi
 ---
 
-# Type Safe Named Routes Using Patterns: Part I
+# Named Routes in Okapi: Part I
 
 A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion in the thread and I got lots of useful, constructive feedback.
@@ -24,25 +24,25 @@ I think I've found a solution that I like so I'll be covering it from motivation
 
 1. Part I (the one you're currently reading)
 
-   I cover the motivation for type safe named routes and briefly give an idea of how they're implemented in some other web frameworks. Skip to Part II if you're already familiar with this.
+   I cover the motivation for named routes and briefly give an idea of how they're implemented in some other web frameworks.
 
 2. [Part II](/post3)
 
-   I go over the `-XPatternSynonyms` and `-XViewPatterns` language extensions and how they are used to implement type safe named routes in Okapi.
+   I go over the `-XPatternSynonyms` language extension and how it's used to implement type safe named routes in Okapi.
 
 3. [Part III](/post4)
 
-   I go over more advanced uses of type safe named routes in Okapi, like using them with [htmx]().
-   
+   An example of a simple web application built using Okapi's named routes.
+
 Enjoy!
 
 ## Routes and Handlers
 
-**Routes** are definitions that a web framework uses to match incoming requests with the correct handlers.
+Generally speaking, **routes** are definitions that a web framework uses to match incoming requests with the correct handlers.
 **Handlers** are functions that perform actions and determine what response is returned to the client.
 Frameworks use various language features for defining routes and their handlers.
 
-For example, Python's Flask uses function decorators to define routes and the function definitions they're applied to as handlers:
+For example, Python's Flask uses function decorators to define routes, and the function definitions they're applied to as handlers.
 
 ```python
 @app.route('/product/<name>')
@@ -50,7 +50,7 @@ def get_product(name):
   return "The product is " + str(name)
 ```
 
-PHP's Laravel uses the `Route` class and its methods to define routes, and callback functions to define handlers:
+PHP's Laravel uses the `Route` class and its methods to define routes, and callback functions to define handlers.
 
 ```php
 Route::get('/product/{name}', function ($name) {
@@ -58,7 +58,7 @@ Route::get('/product/{name}', function ($name) {
 });
 ```
 
-Okapi uses a special monad to define both routes and handlers:
+Okapi uses a special monad to define both routes and handlers.
 
 ```haskell
 newtype Name a = Name { unName :: Text }
@@ -73,8 +73,8 @@ getProduct = do
     & return
 ```
 
-An interesting thing to note about Okapi is its lack of distinction between route and handler. If the developer wants, they can
-separate the two constructs like so:
+An interesting thing to note about Okapi is its lack of distinction between route and handler. If the developer wants, they can still
+separate the two constructs.
 
 ```haskell
 getProduct = getProductRoute >>= getProductHandler
@@ -101,19 +101,19 @@ I found this description of named routes in [this Laravel tutorial](https://www.
 To get an idea for why named routes are beneficial, let's imagine we are web devlopers for a local pet store:
  
 - We have a handler for the route `/petstore/reptile/snake` that returns a page of all our snakes on sale
-- We have a special sale for snakes this week, so the manager wants a hyperlink to the `/petstore/reptile/snake` page on our homepage
-- We add the hyperlink `<a href="/petstore/reptile/snek">CUTE SNAKES FOR SALE</a>` to our homepage HTML template
+- We have a special sale for snakes this week, so our manager wants a hyperlink to the `/petstore/reptile/snake` page on our homepage
+- We add the hyperlink `<a href="/petstore/reptile/snek">SNAKES FOR SALE</a>` to our homepage HTML template
 - We deploy the new version of the website and wait for the money from selling large amounts of pet snakes to roll in
 
 Unfortunately, we find out next week that the hyperlink we added was misspelled and snake sales were lower than expected.
 The manager of the pet store isn't happy.
 
 This is where named routes come in. They push the burden of making sure URLs are spelled correctly on to the computer. We do this by assigning
-our route definitions to identifiers that can be used in our HTML templates or redirects. When we refer to the identifier in our code, the correct URL for
-the route it was assigned is automatically generated. If we misspell the named route's identifier, the computer will be able let us know with an error like
-`Couldn't find variable misspelledVariableName`.
+our route definitions to identifiers that can be used in our HTML templates or redirect statements.
+When we refer to the identifier in our code, the correct URL for the route it was assigned is automatically generated.
+If we misspell the named route's identifier, the computer will be able let us know with an error like `Couldn't find variable misspelledVariableName`.
 
-Here's an example of named routes in Laravel:
+Here's an example of a named route in Laravel.
 
 ```php
 Route::get('/petstore/reptile/snake', function () {
@@ -121,7 +121,7 @@ Route::get('/petstore/reptile/snake', function () {
 })->name('snakesforsale');
 ```
 
-Now we can use the `snakesforsale` identifier in our templates (Laravel uses Blade templates) like so:
+Now we can use the `snakesforsale` identifier in our templates.
 
 ```html
 ...
@@ -135,7 +135,7 @@ The definition may change, but as long as the route's identifier is the same we 
 ## Type Safe Named Routes
 
 In the examples up until this point, we've looked at simple routes that didn't have any path parameters, like `/petstore/reptile/snake`.
-The question now is, how do we use named routes to handle URLs with path parameters? For example, let's say we need to implement a router for URLs of the form `/user/<uid>/profile` where `<uid>` is a path parameter representing a user's unique identifier. In Laravel, we could define our route for such a URL as follows:
+The question now is, how do we use named routes to handle URLs with path parameters? For example, let's say we need to implement a router for URLs of the form `/user/<uid>/profile` where `<uid>` is a path parameter representing a user's unique identifier. In Laravel, we can define the route for such a URL.
 
 ```php
 Route::get('/user/{uid}/profile', function ($uid) {
@@ -143,7 +143,7 @@ Route::get('/user/{uid}/profile', function ($uid) {
 })->name('profile');
 ```
 
-To generate the URL for this named route, we use the `route` function just as we used it in the previous example, except now we also need to pass the function a map representing the URLs parameters:
+To generate the URL for this named route, we use the `route` function just as we used it in the previous example, except now we also need to pass the function a map representing the URLs parameters.
 
 ```php
 $linkToUser1Profile = route('profile', ['uid' => 1]);
@@ -161,12 +161,19 @@ There a couple of issues with this though:
 Some web frameworks in statically typed languages offer a solution to these issues that we'll call **type safe named routes**.
 Type safe named routes are similar to named routes, except they offer an extra layer of safety that catches developer errors at the best time: compile time.
 
-Although you can find implementations of type safe named routes in other statically typed languages, I'm most familiar with how web frameworks in Haskell do it.
-For the most part, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
+Although you can find implementations of type safe named routes in many statically typed languages, I'm most familiar with them from my experience with Haskell web frameworks like Yesod and Servant. From my knowledge, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
 
 1. Metaprogramming via Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
 2. Type-level programming e.g. [Servant]() and [Spock]()
 
-Okapi proposes a third technique: patterns.
+I recommend checking out the links for each framework listed above if you're unfamiliar with how they work, and want to learn more about how named routes are implemented in each respective framework.
+I won't cover these frameworks in this essay for fear of missrepresenting them, and their documentation already does a good job.
+
+If you're already familiar with the web frameworks listed above, and Haskell in general, you know that Template Haskell and type-level programming
+are considered to be some of Haskell's more complex features. On top of that, the use of Template Haskell and/or type-level programming increases
+compile times by a noticeable amount. Especially on larger projects. This is undesireable because it decreases productivity, and web developers want a fast feedback loop when making constant changes to web application.
+
+Does Haskell have other, simpler features that can be used to implement type safe named routes in Okapi?
+After some experimentation, I've come to the conclusion that **pattern synonyms** may be the answer.
 
 [To be continued...](/post3)
