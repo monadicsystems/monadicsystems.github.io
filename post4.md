@@ -1,75 +1,101 @@
 ---
-title: Type Safe Named Routes Using Patterns: Part III
+title: Named Routes in Okapi: Part III
 image: /logo-bg.png
 summary: A blog post about type safe named routes in Okapi
 ---
 
-# Type Safe Named Routes Using Patterns: Part III
+# Named Routes in Okapi: Part III
 
-In Part I we pondered the motivation for type safe named routes, and how they work in other frameworks like Yesod and Servant.
+In Part I we pondered the motivation for named routes, and how they work in other frameworks like Yesod and Servant.
 
-In Part II we covered pattern synonyms, and how we can use them to implement type safe named routes in Okapi.
+In Part II we covered pattern synonyms, and how we can use them to implement named routes in Okapi.
 
 In the final post of this series, we'll look at how to handle more complicated cases where we need to dispatch
 on other request information besides the path.
 
-## Type Safe Form Attributes
+## Safe Form Attributes
 
 At the end of Part II, we left off with this interesting thought.
 
-> Imagine we had a cooking recipe app with two types of forms, one for querying recipes and another for submitting new recipes.
-> The HTML for the two forms would look like this.
+> Imagine we had an online car dealership with two types of forms. One for querying the available cars for sale,
+> and another for submitting a car you'd like to sell. The HTML for the two forms would look like this.
+>
 > ```html
-> <form action="/recipe" method="post">
+> <form action="/cars" method="get">
 >  ...
 > </form>
 >
-> <form action="/recipe" method="get">
->  ...
+> <form action="/cars" method="post">
+>   ...
 > </form>
 > ```
 >
-> If we could pattern match on the request method and request path, we could safely generate type safe form attributes for our HTML forms too. Just like how we > generated the URL for our redirect in the previous example.
+> If we could pattern match on the request method and request path, we could safely generate form attributes for our HTML forms too.
+> Just like how we safely generated the URLs for our redirects in the previous examples.
 >
 > ```html
-> {% raw %}<form {renderFormAttributes PostRecipeRoute}>
+> <form {renderFormAttrs QueryCarsRoute}>
 >   ...
 > </form>
 >
-> <form {renderFormAttributes QueryRecipesRoute}>
+> <form {renderFormAttrs PostCarsRoute}>
 >   ...
-> </form>{% endraw %}
+> </form>
 > ```
->
-> This would ensure that all form actions in our HTML are valid.
 
-To implement this thought let's model what a recipe is, and declare our pattern synonyms for the routes.
-To help with pattern matching on the request method Okapi exports bidirectional patterns for all request methods, like `GET` and `POST`.
+To implement this thought let's model what a car is in our application, and declare pattern synonyms for the routes.
+To help with pattern matching on the request method Okapi exports pattern synonyms for all request methods, like `GET` and `POST`.
 
 ```haskell
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
 import Okapi
+import ... -- other various imports
 
-data Recipe = Recipe
-  { recipeName :: Text
-  , recipeIngredients :: [Text]
-  , recipeDetail :: Text
-  , recipeCookTime :: Int -- ^ Cook time of the recipe in minutes
-  }
+data Make = Toyota | Ford | Honda | Mercedes | BMW
+  deriving (Eq, Show)
 
-pattern HomeRoute = (GET, [""]) -- ^ @[""]@ represents the trailing slash e.g. www.example.com/
+instance ToHttpApiData Make where
+  toQueryParam = \case
+    Toyota -> "toyota"
+    Ford -> "ford"
+    Honda -> "honda"
+    Mercedes -> "mercedes"
+    BMW -> "bmw"
 
-pattern QueryRecipesRoute = (GET, ["recipes"])
+instance FromHttpApiData Make where
+  parseQueryParam = \case
+    "toyota"   -> Right Toyota
+    "ford"     -> Right Ford
+    "honda"    -> Right Honda
+    "mercedes" -> Right Mercedes
+    "bmw"      -> Right BMW
+    _          -> Left "Couldn't parse car make"
 
-pattern PostRecipesRoute = (POST, ["recipes"])
+data Car = Car
+  { carMake  :: Make
+  , carYear  :: Int
+  , carMiles :: Int
+  , carPrice :: Float
+  } deriving (Eq, Show, Generic)
+
+instance FromForm Car where
+
+pattern HomeRoute = (GET, [])
+
+pattern QueryCarsRoute = (GET, ["cars"])
+
+pattern PostCarsRoute = (POST, ["cars"])
+
+pattern PostSuccessRoute = (GET, ["cars", "post", "success"])
+
+pattern PostFailureRoute = (GET, ["cars", "post", "failure"])
 ```
 
-Now that we've defined our route patterns, let's implement our rendering functions. Now, we will have two rendering functions: one for generating URLs and one for generating HTML form actions.
+Now that we've defined our data types, instances, and route patterns, let's implement our rendering functions. Now, we will need two rendering functions. One for generating URLs and one for generating HTML form actions.
 
 ```haskell
 renderURL :: (Method, Path) -> Text
@@ -100,12 +126,12 @@ Also, consider the case where we have to use these generated URLs and form actio
 With the custom rendering functions, we just have to implement them once, test them if we see the need, and be done with it. If we do find bugs in the URLs/form actions in the future, we just have to reimplement the rendering function that's causing it.
 If we were to use string concatenation directly in our HTML template, in multiple places, we'd risk introducing a bug each time we need generate a URL/form action. We'd also have to update the same code in multiple places if we were to make any change to our URL structure. This is no good.
 
-Now that we have our route patterns and rendering functions, let's implement the parser and dispatcher function that we're passing to `route`.
+Now that we have our route patterns and rendering functions, let's implement the parser and dispatcher function that we're going to pass to `route`.
 Remember, the type of the `route` function is `MonadOkapi m => m a -> (a -> Handler m) -> Handler m` where the first argument is the parser and the second
 argument is the dispatcher.
 
-For the parser, we want to return the request method and request path because that what we've defined our pattern synonyms to match on;
-a value of type `(Method, Path)`.
+For the parser we want to return the request method and request path, because that what we've defined our pattern synonyms to match on:
+values of type `(Method, Path)`.
 
 ```haskell
 methodAndPath :: MonadOkapi m => m (Method, Path)
@@ -119,25 +145,55 @@ Brilliant. Now we can define the dispatcher function using `-XLambdaCase`, and f
 
 ```haskell
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
 import Okapi
+import ... -- other various imports
 
-data Recipe = Recipe
-  { recipeName :: Text
-  , recipeIngredients :: [Text]
-  , recipeDetail :: Text
-  , recipeCookTime :: Int -- ^ Cook time of the recipe in minutes
-  }
+data Make = Toyota | Ford | Honda | Mercedes | BMW
+  deriving (Eq, Show)
 
-pattern HomeRoute = (GET, [""]) -- ^ @[""]@ represents the trailing slash e.g. www.example.com/
+instance ToHttpApiData Make where
+  toQueryParam = \case
+    Toyota -> "toyota"
+    Ford -> "ford"
+    Honda -> "honda"
+    Mercedes -> "mercedes"
+    BMW -> "bmw"
 
-pattern QueryRecipesRoute = (GET, ["recipes"])
+instance FromHttpApiData Make where
+  parseQueryParam = \case
+    "toyota"   -> Right Toyota
+    "ford"     -> Right Ford
+    "honda"    -> Right Honda
+    "mercedes" -> Right Mercedes
+    "bmw"      -> Right BMW
+    _          -> Left "Couldn't parse car make"
 
-pattern PostRecipesRoute = (POST, ["recipes"])
+data Car = Car
+  { carMake  :: Make
+  , carYear  :: Int
+  , carMiles :: Int
+  , carPrice :: Float
+  } deriving (Eq, Show, Generic, FromForm)
+
+pattern HomeRoute = (GET, [])
+
+pattern QueryCarsRoute = (GET, ["cars"])
+
+pattern PostCarsRoute = (POST, ["cars"])
+
+pattern PostSuccessRoute = (GET, ["cars", "post", "success"])
+
+pattern PostFailureRoute = (GET, ["cars", "post", "failure"])
 
 renderURL :: (Method, Path) -> Text
 renderURL (_, p) = renderPath p
@@ -149,46 +205,168 @@ renderFormAttrs (m, p) = renderAction p <> " " <> renderMethod m
     renderMethod = \case
       POST -> "method=\"" <> "post" <> "\""
       _    -> "method=\"" <> "get" <> "\"" -- ^ method="get" is the default method for forms
-      
-methodAndPath :: MonadOkapi m => m (Method, Path)
-methodAndPath = do
+
+methodAndPathParser :: MonadOkapi m => m (Method, Path)
+methodAndPathParser = do
   m <- method
   p <- path
   return (m, p)
 
-main :: IO ()
-main = run id $ route methodAndPath $ \case
+methodAndPathDispatcher :: (MonadOkapi m, MonadIO m) => IORef [Car] -> (Method, Path) -> m Response
+methodAndPathDispatcher database = \case
   HomeRoute -> do
     let html =
-      [qq|
-          <h1>Recipes Home</h1>
-          <hr>
-          <h2>Query Recipes</h2>
-          <form {renderFormAttrs QueryRecipesRoute}>
-            ...
-          </form>
-          <hr>
-          <h2>Create New Recipes</h2>
-          <form {renderFormAttrs PostRecipesRoute}>
-            ...
-          </form>
-      |]
+          [qq|
+            <h1>Welcome to the online car dealership!</h1>
+            <hr>
+            <h2>Query Cars</h2>
+            <form {renderFormAttrs QueryCarsRoute}>
+              <label for="make">Car Make: </label>
+              <select name="make" id="make" multiple>
+                <option value={toQueryParam Toyota}>Toyota</option>
+                <option value={toQueryParam Ford}>Ford</option>
+                <option value={toQueryParam Honda}>Honda</option>
+                <option value={toQueryParam Mercedes}>Mercedes</option>
+                <option value={toQueryParam BMW}>BMW</option>
+              </select>
+              <br>
+              <label for="year">Car Latest Year: </label>
+              <input type="range" id="year" name="year" min="1985" step="1" max="2022" value="2022" oninput="this.nextElementSibling.value = this.value">
+              <output>2022</output>
+              <br>
+              <label for="miles">Car Max Miles: </label>
+              <input type="range" id="miles" name="miles" min="0" step="50000" max="500000" value="500000" oninput="this.nextElementSibling.value = this.value">
+              <output>500000</output>
+              <br>
+              <label for="price">Car Max Price: </label>
+              <input type="range" id="price" name="price" min="0" step="1000" max="200000" value="200000" oninput="this.nextElementSibling.value = this.value">
+              <output>200000</output>
+              <br>
+              <input type="submit" value="Submit">
+            </form>
+            <hr>
+            <h2>Put Your Car Up For Sale</h2>
+            <form {renderFormAttrs PostCarsRoute}>
+              <label for="carMake">Car Make: </label>
+              <select name="carMake" id="carMake">
+                <option value={toQueryParam Toyota}>Toyota</option>
+                <option value={toQueryParam Ford}>Ford</option>
+                <option value={toQueryParam Honda}>Honda</option>
+                <option value={toQueryParam Mercedes}>Mercedes</option>
+                <option value={toQueryParam BMW}>BMW</option>
+              </select>
+              <br>
+              <label for="carYear">Car Year: </label>
+              <select name="carYear" id="carYear">
+                {Data.ByteString.concat $ Prelude.map makeYearOption [1985..2022]}
+              </select>
+              <br>
+              <label for="carMiles">Car Miles: </label>
+              <input type="range" id="carMiles" name="carMiles" min="0" step="50000" max="500000" value="200000" oninput="this.nextElementSibling.value = this.value">
+              <output>200000</output>
+              <br>
+              <label for="carPrice">Car Price: </label>
+              <input type="range" id="carPrice" name="carPrice" min="0" step="1000" max="200000" value="20000" oninput="this.nextElementSibling.value = this.value">
+              <output>20000</output>
+              <br>
+              <input type="submit" value="Submit">
+            </form>
+          |]
     return $ setHTML html $ ok
-  QueryRecipesRoute -> do
-    maybeTodo <- liftIO $ queryTodo tID
-    case maybeTodo of
-      Nothing   -> return notFound
-      Just todo -> return $ setJSON todo $ ok
-  PostRecipesRoute -> do
-    todoForm <- bodyForm @TodoForm
-    maybeNewTodo <- liftIO $ insertTodoForm todoForm
-    case maybeNewTodo of
-      Nothing      -> return notFound
-      Just newTodo -> return $ setJSON newTodo $ ok
-  _ -> next
+  QueryCarsRoute -> do
+    maybeMakes <- optional $ queryList @Make "make"
+    latestYear <- queryParam @Int "year"
+    maxMiles <- queryParam @Int "miles"
+    maxPrice <- queryParam @Float "price"
+
+    carsThatMatchQuery <- liftIO $ do
+      let makes = case maybeMakes of
+            Nothing -> []
+            Just (m :| ms) -> m : ms
+      availableCars <- readIORef database
+      return $ filterCars makes maxMiles maxPrice availableCars
+
+    let html =
+          if Prelude.null carsThatMatchQuery
+            then
+              [qq|
+                <h1>No results match your query.</h1>
+                <a href="{renderURL HomeRoute}">Go back</a>
+              |]
+            else
+              [qq|
+                <table>
+                  <tr>
+                    <th>Make</th>
+                    <th>Year</th>
+                    <th>Miles</th>
+                    <th>Price</th>
+                  </tr>
+                  {Data.ByteString.concat $ Prelude.map makeCarTableRow carsThatMatchQuery}
+                </table>
+                <a href="{renderURL HomeRoute}">Go back</a>
+              |]
+
+    return $ setHTML html $ ok
+  PostCarsRoute -> do
+    maybeCarForSale <- optional $ bodyForm @Car
+    case maybeCarForSale of
+      Nothing -> return $ redirect 302 $ renderURL PostFailureRoute 
+      Just carForSale -> do
+        liftIO $ modifyIORef database (carForSale :)
+        return $ redirect 302 $ renderURL PostSuccessRoute
+  PostSuccessRoute -> do
+    let html =
+          [qq|
+            <h1>
+              Your car is now up for sale!
+            </h1>
+            <a href="{renderURL HomeRoute}">Go back</a>
+          |]
+    return $ setHTML html $ ok
+  PostFailureRoute -> do
+    let html =
+          [qq|
+            <h1>
+              We can't put your car up for sale.
+              Make sure you entered valid data.
+            </h1>
+            <a href="{renderURL HomeRoute}">Go back</a>
+          |]
+    return $ setHTML html $ ok
+  _ -> Okapi.next
+
+main :: IO ()
+main = do
+  database <- newIORef []
+  run id $ route methodAndPathParser $ methodAndPathDispatcher database
+
+makeYearOption :: Int -> ByteString
+makeYearOption year = [qq|<option value={toQueryParam year}>{toQueryParam year}</option>|]
+
+makeCarTableRow :: Car -> ByteString
+makeCarTableRow Car{..} =
+  [qq|
+    <tr>
+      <td>{carMake}</td>
+      <td>{show carYear}</td>
+      <td>{show carMiles}</td>
+      <td>${show carPrice}</td>
+    </tr>
+  |]
+
+filterCars :: [Make] -> Int -> Float -> [Car] -> [Car]
+filterCars makes maxMiles maxPrice cars =
+  [ car
+  | car <- cars
+  , carMiles car <= maxMiles
+  , carPrice car <= maxPrice
+  , if Prelude.null makes then True else carMake car `Prelude.elem` makes
+  ]
 ```
 
 For the HTML templating in this example I'm using the `interpolatedstring-perl6` package.
 This package makes it really easy to interpolate Haskell expressions in multiline strings.
 
 ## Conclusion
+
