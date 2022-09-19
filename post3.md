@@ -6,8 +6,8 @@ summary: A blog post about type safe named routes in Okapi
 
 # Named Routes in Okapi: Part II
 
-In Part I we pondered the motivation for type safe named routes, and learned how they work in other frameworks like Yesod and Servant.
-Now we can talk about how type safe named routes are implemented in Okapi.
+In Part I we pondered the motivation for named routes, and learned how they work in other frameworks like Yesod and Servant.
+Now we can talk about how named routes are implemented in Okapi.
 
 ### -XPatternSynonyms
 
@@ -247,7 +247,7 @@ main = run id $ route path $ \case
 
 Awesome!
 
-We've only covered the simplest use case of type safe named routes in Okapi. What if we want to pattern match on properties of the request other than
+We've only covered the simplest use case of named routes in Okapi. What if we want to pattern match on properties of the request other than
 the path?
 
 Imagine we had an online car dealership with two types of forms. One for querying the available cars for sale, and another for submitting a car you'd like to sell. The HTML for the two forms would look like this.
@@ -262,7 +262,7 @@ Imagine we had an online car dealership with two types of forms. One for queryin
 </form>
 ```
 
-If we could pattern match on the request method and request path, we could safely generate type safe form attributes for our HTML forms too. Just like how we generated the URL for our redirects in the previous examples.
+If we could pattern match on the request method and request path, we could safely generate form attributes for our HTML forms too. Just like how we safely generated the URLs for our redirects in the previous examples.
 
 ```html
 <form {renderFormAttrs QueryCarsRoute}>
