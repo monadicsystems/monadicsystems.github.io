@@ -55,6 +55,7 @@ To help with pattern matching on the request method Okapi exports pattern synony
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -184,6 +185,7 @@ Brilliant. Let's define the dispatcher function using `-XLambdaCase`, and feed t
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
