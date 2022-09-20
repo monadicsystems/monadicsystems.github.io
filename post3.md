@@ -25,7 +25,7 @@ myFoo :: Foo
 myFoo = Foo "hello" 54
 ```
 
-and for deconstructing values of that type.
+and to deconstruct values of that type.
 
 ```haskell
 getTextFromFoo :: Foo -> Text
@@ -42,7 +42,7 @@ pattern FooText text <- Foo text _
 ```
 
 Pattern synonym declarations are similar to function declarations, but they are prefixed with the `pattern` keyword
-and must have an uppercase identifier, like data constructors. They can even have type signatures! You'll also notice that instead
+and must have an uppercase identifier like data constructors. They can even have type signatures! You'll also notice that instead
 of an `=` sign preceding the body of the declaration, a `<-` is used instead. This reverse arrow is used when defining what's
 called a **unidirectional pattern**. Unidirectional patterns are unidirectional because they can only be used for deconstructing values, not constructing them.
 For example, let's redefine the function `getTextFromFoo` using the unidirectional pattern we defined.
@@ -99,7 +99,7 @@ pattern FlippedFoo :: Int -> Text -> Foo
 pattern FlippedFoo int text = Foo text int
 ```
 
-Pattern synonyms declared in this manner are called **implicit bidirectional patterns**. The body of implicit bidirectional pattern declarations is prefixed an `=` sign, just like function declarations, instead of the `<-` used in unidirectional and explicit bidirectional patterns. This can only be done if all the pattern synonym's parameters are used in the body of the pattern synonym.
+Pattern synonyms declared in this manner are called **implicit bidirectional patterns**. The body of an implicit bidirectional pattern synonyms is prefixed with an `=` sign, just like a function declaration. This can only be done if all the pattern synonym's parameters are used in the body of the pattern synonym.
 
 Now we can use `FlippedFoo` just like `Foo`, except the parameters are in reverse order.
 
@@ -112,9 +112,9 @@ Now we can use `FlippedFoo` just like `Foo`, except the parameters are in revers
 
 Nice!
 
-## How Okapi Uses Patterns For Type Safe Named Routes
+## How Okapi Uses Patterns For Named Routes
 
-In Okapi, type safe named routes are implemented using pattern synonyms. It works becuase we can use the same "identifier", a bidirectional pattern, to deconstruct and construct various parts of an HTTP request.
+In Okapi, named routes are implemented using pattern synonyms. It works becuase we can use the same "identifier", a bidirectional pattern, to deconstruct and construct various parts of an HTTP request.
 
 Okapi exports a function called `route`.
 
