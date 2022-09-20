@@ -7,7 +7,7 @@ summary: A blog post about type safe named routes in Okapi
 # Named Routes in Okapi: Part I
 
 A while back, I made a [post on Reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
-introducing the [Okapi web framework]() to the Haskell community. There was good discussion in the thread and I got lots of useful, constructive feedback.
+introducing [Okapi](https://www.okapi.wiki/) to the Haskell community. There was good discussion in the thread and I got lots of useful, constructive feedback.
 There was one comment on the post by u/n00bomb that caught my attention:
 
 > How to do "Named Routes"?
@@ -163,17 +163,17 @@ Type safe named routes are similar to named routes, except they offer an extra l
 
 Although you can find implementations of type safe named routes in many statically typed languages, I'm most familiar with them from my experience with Haskell web frameworks like Yesod and Servant. From my knowledge, Haskell web frameworks utilize one of these two techniques to implement type safe named routes:
 
-1. Metaprogramming via Template Haskell e.g. [Yesod](), [wai-routes](), and [Happstack]() via the [web-routes-boomerang package]()
-2. Type-level programming e.g. [Servant]() and [Spock]()
+1. Metaprogramming via Template Haskell e.g. [Yesod](https://www.yesodweb.com/blog/2010/05/really-type-safe-urls), [wai-routes](https://hackage.haskell.org/package/wai-routes), and [Happstack via the web-routes-boomerang package](https://www.happstack.com/docs/crashcourse/index.html#web-routes-boomerang)
+2. Type-level programming e.g. [Servant](https://kseo.github.io/posts/2017-01-20-how-servant%27s-type-safe-links-work.html) and [Spock](https://www.spock.li/2015/04/19/type-safe_routing.html)
 
 I recommend checking out the links for each framework listed above if you're unfamiliar with how they work, and want to learn more about how named routes are implemented in each respective framework.
-I won't cover these frameworks in this essay for fear of missrepresenting them, and their documentation already does a good job.
+I won't cover these frameworks myself in this essay for fear of missrepresenting them. Besides, the documentation and blog posts I listed above already do a great job.
 
-If you're already familiar with the web frameworks listed above, and Haskell in general, you know that Template Haskell and type-level programming
+If you're familiar with the web frameworks listed above, and Haskell in general, you know that Template Haskell and type-level programming
 are considered to be some of Haskell's more complex features. On top of that, the use of Template Haskell and/or type-level programming increases
-compile times by a noticeable amount. Especially on larger projects. This is undesireable because it decreases productivity, and web developers want a fast feedback loop when making constant changes to web application.
+compile times by a noticeable amount. Especially on larger projects. This is undesireable because it decreases productivity, and web developers want a fast feedback loop when making constant changes to a web application.
 
-Does Haskell have other, simpler features that can be used to implement type safe named routes in Okapi?
+Does Haskell have other simpler features that can be used to implement type safe named routes in Okapi?
 After some experimentation, I've come to the conclusion that **pattern synonyms** may be the answer.
 
 [To be continued...](/post3)
