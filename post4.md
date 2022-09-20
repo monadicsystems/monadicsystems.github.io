@@ -171,7 +171,7 @@ Our dispatcher will have 6 routes. 5 for each pattern we defined earlier, and 1 
    
 6. _
 
-   The dispatcher fails with `next`, and the user gets a default 404 response if the request doesn't match any of our patterns.
+   The dispatcher fails with `next` and the user gets a default 404 response if the request doesn't match any of our patterns.
 
 Brilliant. Let's define the dispatcher function using `-XLambdaCase`, and feed that in to the `route` function to bring everything together.
 
