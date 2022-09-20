@@ -100,7 +100,7 @@ pattern PostSuccessRoute = (GET, ["cars", "post", "success"])
 pattern PostFailureRoute = (GET, ["cars", "post", "failure"])
 ```
 
-Now that we've defined our data types, instances, and route patterns, let's implement our rendering functions. Now, we will need two rendering functions. One for generating URLs and one for generating HTML form attributes.
+Now that we've defined our data types, instances, and route patterns, let's implement our rendering functions. We need two rendering functions. One for generating URLs and one for generating HTML form attributes.
 
 ```haskell
 renderURL :: (Method, Path) -> Text
