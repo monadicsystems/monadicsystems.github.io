@@ -406,10 +406,12 @@ For the "database" we're using an `IORef [Car]` that's created in `main` and pas
 
 ## Conclusion
 
-This is how named routes are done in Okapi. I like using patterns for named routes in Okapi because it's more flexible, easier to understand, and doesn't take as long to compile compared to using Template Haskell and type-level programming. Although Okapi's named routes don't provide the same level of guarantees that Servant's named routes do, I think they are good enough for most use cases and are more flexible than Servant's named routes.
+This is how named routes are done in Okapi. I like using patterns for named routes in Okapi because it's more flexible, easier to understand, and doesn't take as long to compile compared to using Template Haskell or type-level programming. Although Okapi's named routes don't provide the same level of guarantees that Servant's named routes do, I think they are good enough for most use cases and are more flexible than Servant's named routes.
 
 I'm still in the process of seeing what else can be done with patterns. We can actually pattern match on more than just the request path and request method.
-With view patterns we can also pattern match on the request query, request headers, and request body, and even perform validation on these parts of the request! Right now Okapi's `Request` data type doesn't provide request information like the request host and request port, but if it did it'd be possible to also match
+With view patterns we can also pattern match on the request query and request headers, and even perform validation on these parts of the request!
+
+Right now Okapi's `Request` data type doesn't provide request information like the request host and request port, but if it did it'd be possible to also match
 on those request properties just like anything else. This would be useful for virtual hosting. This may be added in the future.
 
 If you found this series interesting, checkout Okapi's [documentation](https://www.okapi.wiki/) for more information on how to use it in your own projects.
