@@ -43,12 +43,18 @@ At the end of Part II, we left off with this interesting thought.
 > </form>
 > ```
 
-To implement this thought let's model what a car is in our application, and declare pattern synonyms for the routes.
+To implement this, let's model what a car is in our application and declare pattern synonyms for the routes.
 To help with pattern matching on the request method Okapi exports pattern synonyms for all request methods, like `GET` and `POST`.
 
 ```haskell
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
@@ -80,9 +86,7 @@ data Car = Car
   , carYear  :: Int
   , carMiles :: Int
   , carPrice :: Float
-  } deriving (Eq, Show, Generic)
-
-instance FromForm Car where
+  } deriving (Eq, Show, Generic, FromForm)
 
 pattern HomeRoute = (GET, [])
 
@@ -95,7 +99,7 @@ pattern PostSuccessRoute = (GET, ["cars", "post", "success"])
 pattern PostFailureRoute = (GET, ["cars", "post", "failure"])
 ```
 
-Now that we've defined our data types, instances, and route patterns, let's implement our rendering functions. Now, we will need two rendering functions. One for generating URLs and one for generating HTML form actions.
+Now that we've defined our data types, instances, and route patterns, let's implement our rendering functions. Now, we will need two rendering functions. One for generating URLs and one for generating HTML form attributes.
 
 ```haskell
 renderURL :: (Method, Path) -> Text
@@ -112,36 +116,64 @@ renderFormAttrs (m, p) = renderAction p <> " " <> renderMethod m
 
 Sweet! You might be thinking,
 
-> Hmmmm, I thought the appeal of type safe named routes was that we remove the possibility of developer error.
+> Hmmmm, I thought the appeal of named routes was that we remove the possibility of developer error.
 > In this case, we're implementing these rendering functions ourselves.
 > Couldn't the developer make a mistake here that isn't caught by the compiler?
-> What if the string concatenation in the implementation of `renderFormAction` isn't correct?
+> What if the string concatenation in the implementation of `renderFormAttrs` isn't correct?
 
 This is true, the developer can make mistakes when implementing custom rendering functions and they may not be caught by the compiler.
 Still, I believe this is better than plain string concatenation because it's much easier to test and find potential bugs in the implementation.
 We can use basic unit tests to see that the rendering functions generate the correct string.
-It's a lot harder to test if we have string concatenation directly in the HTML template. We can only manually test the web application, or look at the generated HTML to see if the strings were concatenated correctly.
+It's a lot harder to test if we have string concatenation directly in the HTML template.
+We can only manually test the web application, or look at the generated HTML to see if the strings were concatenated correctly.
 
 Also, consider the case where we have to use these generated URLs and form actions in multiple places.
-With the custom rendering functions, we just have to implement them once, test them if we see the need, and be done with it. If we do find bugs in the URLs/form actions in the future, we just have to reimplement the rendering function that's causing it.
-If we were to use string concatenation directly in our HTML template, in multiple places, we'd risk introducing a bug each time we need generate a URL/form action. We'd also have to update the same code in multiple places if we were to make any change to our URL structure. This is no good.
+With the custom rendering functions, we just have to implement them once, test them if needed, and be done with it. If we do find bugs in the URLs/form attributes in the future, we just have to reimplement the rendering function that's causing it.
+If we were to use string concatenation directly in our HTML template, in multiple places, we'd risk introducing a bug each time we need to generate URLs/form attributes. We'd also have to update the same code in multiple places if we were to make any change to our URL structure. This is not good.
 
-Now that we have our route patterns and rendering functions, let's implement the parser and dispatcher function that we're going to pass to `route`.
+Now that we have our route patterns and rendering functions, let's implement the parser and dispatcher functions that we're going to pass to `route`.
 Remember, the type of the `route` function is `MonadOkapi m => m a -> (a -> Handler m) -> Handler m` where the first argument is the parser and the second
 argument is the dispatcher.
 
-For the parser we want to return the request method and request path, because that what we've defined our pattern synonyms to match on:
+For the parser we want to return the request method and request path, because that's what we've defined our pattern synonyms to match on:
 values of type `(Method, Path)`.
 
 ```haskell
-methodAndPath :: MonadOkapi m => m (Method, Path)
-methodAndPath = do
+methodAndPathParser :: MonadOkapi m => m (Method, Path)
+methodAndPathParser = do
   m <- method
   p <- path
   return (m, p)
 ```
 
-Brilliant. Now we can define the dispatcher function using `-XLambdaCase`, and feed that in to the `route` function directly to bring everything together.
+Our dispatcher will have 6 routes. 5 for each pattern we defined earlier, and 1 for when the incoming request doesn't match any of the patterns.
+
+1. HomeRoute
+
+   This is where the user will find the two forms. One for querying current cars on sale, and one for putting a car up for sale.
+
+2. QueryCarsRoute
+
+   This is the endpoint that accepts the form to query current cars on sale, and returns a table of cars that match the user's criteria.
+   
+3. PostCarsRoute
+
+   This is the endpoint that accepts the form to put a car up for sale.
+   Depending on that validity of the form, the user is redirected to a success or failure page.
+
+4. PostSuccessRoute
+
+   The user is redirected to this page if the post form is submitted succesfully.
+
+5. PostFailureRoute
+
+   The user is redirected to this page if the contents of the post form are invalid.
+   
+6. _
+
+   The dispatcher fails with `next`, and the user gets a default 404 response if the request doesn't match any of our patterns.
+
+Brilliant. Let's define the dispatcher function using `-XLambdaCase`, and feed that in to the `route` function to bring everything together.
 
 ```haskell
 {-# LANGUAGE LambdaCase #-}
@@ -340,6 +372,8 @@ main :: IO ()
 main = do
   database <- newIORef []
   run id $ route methodAndPathParser $ methodAndPathDispatcher database
+  
+-- HELPERS BELOW
 
 makeYearOption :: Int -> ByteString
 makeYearOption year = [qq|<option value={toQueryParam year}>{toQueryParam year}</option>|]
@@ -368,5 +402,15 @@ filterCars makes maxMiles maxPrice cars =
 For the HTML templating in this example I'm using the `interpolatedstring-perl6` package.
 This package makes it really easy to interpolate Haskell expressions in multiline strings.
 
+For the "database" we're using an `IORef [Car]` that's created in `main` and passed to our `methodAndPathDispatcher` function.
+
 ## Conclusion
 
+This is how named routes are done in Okapi. I like using patterns for named routes in Okapi because it's more flexible, easier to understand, and doesn't take as long to compile compared to using Template Haskell and type-level programming. Although Okapi's named routes don't provide the same level of guarantees that Servant's named routes do, I think they are good enough for most use cases and are more flexible than Servant's named routes.
+
+I'm still in the process of seeing what else can be done with patterns. We can actually pattern match on more than just the request path and request method.
+With view patterns we can also pattern match on the request query, request headers, and request body, and even perform validation on these parts of the request! Right now Okapi's `Request` data type doesn't provide request information like the request host and request port, but if it did it'd be possible to also match
+on those request properties just like anything else. This would be useful for virtual hosting. This may be added in the future.
+
+If you found this series interesting, checkout Okapi's [documentation](https://www.okapi.wiki/) for more information on how to use it in your own projects.
+Everything is still very much a work in progress. If you have any ideas, concerns, or criticisms to contribute feel free to [create an issue](https://github.com/monadicsystems/okapi/issues).
