@@ -407,7 +407,9 @@ For the "database" we're using an `IORef [Car]` that's created in `main` and pas
 
 Here's the final product.
 
-<img src="https://github.com/monadicsystems/monadicsystems.github.io/blob/main/car-dealership.gif" style="display: block; margin: auto;" />
+<img src="https://github.com/monadicsystems/monadicsystems.github.io/blob/main/car-dealership.gif" alt="Demo of online car dealership" style="display: block; margin: auto;" />
+
+[Go here if the gif doesn't load](https://github.com/monadicsystems/monadicsystems.github.io/blob/main/car-dealership.gif).
 
 ## Conclusion
 
