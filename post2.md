@@ -6,7 +6,7 @@ summary: A blog post about type safe named routes in Okapi
 
 # Named Routes in Okapi: Part I
 
-A while back, I made a [post on reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
+A while back, I made a [post on Reddit](https://www.reddit.com/r/haskell/comments/trzi5u/new_serverside_framework_based_on_monadic_parsing/)
 introducing the [Okapi web framework]() to the Haskell community. There was good discussion in the thread and I got lots of useful, constructive feedback.
 There was one comment on the post by u/n00bomb that caught my attention:
 
@@ -98,7 +98,7 @@ I found this description of named routes in [this Laravel tutorial](https://www.
 > It allows you to refer to the routes when generating URLs or redirects to the specific routes.
 > In short, we can say that the naming route is the way of providing a nickname to the route.
 
-To get an idea for why named routes are beneficial, let's imagine we are web devlopers for a local pet store:
+To get an idea for why named routes are beneficial, let's imagine we are web developers for a local pet store:
  
 - We have a handler for the route `/petstore/reptile/snake` that returns a page of all our snakes on sale
 - We have a special sale for snakes this week, so our manager wants a hyperlink to the `/petstore/reptile/snake` page on our homepage
