@@ -403,8 +403,11 @@ filterCars makes maxMiles maxPrice cars =
 
 For the HTML templating in this example I'm using the `interpolatedstring-perl6` package.
 This package makes it really easy to interpolate Haskell expressions in multiline strings.
-
 For the "database" we're using an `IORef [Car]` that's created in `main` and passed to our `methodAndPathDispatcher` function.
+
+Here's the final product.
+
+<img src="https://github.com/monadicsystems/monadicsystems.github.io/blob/main/car-dealership.gif" style="display: block; margin: auto;" />
 
 ## Conclusion
 
