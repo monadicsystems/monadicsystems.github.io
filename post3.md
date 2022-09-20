@@ -6,7 +6,7 @@ summary: A blog post about type safe named routes in Okapi
 
 # Named Routes in Okapi: Part II
 
-In Part I we pondered the motivation for named routes, and learned how they work in other frameworks like Yesod and Servant.
+In [Part I](/post2) we pondered the motivation for named routes, and learned how they work in other frameworks like Yesod and Servant.
 Now we can talk about how named routes are implemented in Okapi.
 
 ### -XPatternSynonyms
