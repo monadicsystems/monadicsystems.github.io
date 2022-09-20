@@ -6,9 +6,9 @@ summary: A blog post about type safe named routes in Okapi
 
 # Named Routes in Okapi: Part III
 
-In Part I we pondered the motivation for named routes, and how they work in other frameworks like Yesod and Servant.
+In [Part I](/post2) we pondered the motivation for named routes, and how they work in other frameworks like Yesod and Servant.
 
-In Part II we covered pattern synonyms, and how we can use them to implement named routes in Okapi.
+In [Part II](/post3) we covered pattern synonyms and how we can use them to implement named routes in Okapi.
 
 In the final post of this series, we'll look at how to handle more complicated cases where we need to dispatch
 on other request information besides the path.
