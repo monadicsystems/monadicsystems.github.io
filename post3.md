@@ -56,7 +56,7 @@ If we try to use the same pattern to construct a value of type `Foo`, we will ge
 
 ```haskell
 myFoo :: Foo
-myFoo = FooText "hello" -- THIS WON'T WORK BECAUSE FooText IS UNIDRECTIONAL.
+myFoo = FooText "hello" -- THIS WON'T WORK BECAUSE FooText IS UNIDIRECTIONAL.
 ```
 
 This makes sense because if we look at our `FooText` pattern synonym, there's no information about
