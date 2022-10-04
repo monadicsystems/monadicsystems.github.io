@@ -91,8 +91,8 @@ main = run id do
     write "Congratulations for having your name!"
     write "</h2>"
 
-  case name of
-    "James" -> writeCongrats 
+  case name :: Text of
+    "James" -> writeCongrats
     "Janet" -> writeCongrats
     "Alice" -> writeCongrats
     "Larry" -> writeCongrats
@@ -108,4 +108,82 @@ main = run id do
 
 We can generate parts of the response using directives that we all know and love, like `case` statements, `if_then_else_` statements, `let` statements, and even `for_` loops. You may be thinking that this looks very imperative, and you would be right. Haskell is the best imperative programming language after all!
 
+### Using Template Haskell for HSPs
 
+The parser we defined above is a series of statements that pretty much looks like a server page. If only we could put this series of statements in another file, then we would have Haskell Server Pages. Luckily, we can use Template Haskell for this. The process consists of these steps:
+
+1. At compile time, look for files with the `.hsp` extension in the directory specified by the developer. Use the current directory by default.
+2. Parse the `.hsp` files, indent them, and place the statements within a `do` block to create a large `do` expression.
+3. Combine the parsers generated from each `.hsp` file using the `<|>` combinator and path parsers where necessary according to their file path relative to the directory provided by the developer.
+
+You can use HSPs by using the `hsp` quasiquoter function exported by `Okapi.HSP`. You'll also need to turn on the `-XQuasiQuotes` language extension.
+The `hsp` quasiquoter parses the name of the directory that holds your `.hsp` files and generates the correct parser.
+
+The structure of the directory given to the `hsp` quasiquoter has an effect on the parser that is generated. The quasiquoter will generate the correct path parsers for each `.hsp` file based on its file path relative to the directory provided by the developer. This is similar to how `Next.js` works. Routing is based on the structure of the directory.
+
+As an example, let's turn that long parser we defined above for the `greet/<name>` endpoint into a HSP. Let's store our HSP files in the `my_hsp_files` directory.
+
+```
+my_hsp_files/
+├─ greet/
+|  ├─ [name].hsp
+```
+
+Next, in the `[name].hsp` file we define our HSP.
+
+```haskell
+setStatus 200                           -- Set response status to 200
+setHeader ("Content-Type", "text/html") -- Set response header "Content-Type" to "text/html"
+
+-- A "Hello, world!" header
+write "<h1>"
+write "Hello, world!"
+write "</h1>"
+
+-- Write an unordered list from 1 to 5
+write "<ul>"
+for_ [1..5] \num -> do
+  write "<li>"
+  write $ toText num
+  write "</li>"
+write "</ul>"
+
+let writeCongrats = do
+  write "<h2>"
+  write "Congratulations for having your name!"
+  write "</h2>"
+
+case name :: Text of
+  "James" -> writeCongrats
+  "Janet" -> writeCongrats
+  "Alice" -> writeCongrats
+  "Larry" -> writeCongrats
+  _ -> pure ()
+
+-- Use Lucid too!
+writeLucid do
+  h1_ [] "You can also write blocks of Lucid to generate HTML!"
+  div_ [class_ "info"] do
+    p_ [] "Lucid is very useful"
+    a_ [href_ "https://lucid-info.com"] "Learn more about Lucid here"
+```
+
+Finally, we just need to run the `hsp` quasi quoter.
+
+```haskell
+import Okapi.HSP
+
+main = run id [hsp|/my_hsp_files|]
+```
+
+Magic!
+
+### Concerns with HSPs
+
+I thought up the current implementation really quickly and it is nowhere near the best that it could be. Some current downsides with HSPs are that syntax highlighting is lacking. Also, error messages aren't the best if there are syntax errors in your HSP file. The current implementation is very bare bones just to showcase the idea. If it catches on, perhaps it would be possible to add syntax highlighting and other helpers that we get from the Haskell Language Server for HSPs.
+
+## Conclusion
+
+This post just scratches the surface of what can be done with HSPs. In the future I hope to write more about this. In the meantime, feel free to ask questions and/or provide suggestions. I'm looking for contributors. One concern I have with the current implementation of HSPs is the performance. I haven't worried about performance as I'm mostly focused on the ergonomics of the API, but I will definitely be optimizing a lot of these ideas as time goes on.
+
+In the future, it may be possible to serve an entire web application from a single zip executable containing HSPs. Just like redbean, but for Haskell. This is something I'm currently working on with the help of [Cosmopolitan]() and [redbean]() contributors. If this idea interests you and you'd like to help, please send me a DM.
