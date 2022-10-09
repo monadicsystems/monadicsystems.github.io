@@ -8,7 +8,7 @@ summary: How to implement and use Hasekll Server Pages with Okapi
 
 Recently, I've been playing around with [redbean](https://redbean.dev/). Redbean is a highly portable web server written in Lua with support for [Lua Server Pages](https://redbean.dev/#lua). I really like the idea of Lua Server Pages because of their simplicity and ease of use. It reminded me of PHP.
 
-I wanted to see if server pages could be implemented with Haskell. What could server pages look like in Haskell and how do they compare to server page implementations in other languages?
+I wanted to see if server pages could be implemented with Haskell. What would server pages look like in Haskell and how would they compare to server page implementations in other languages?
 
 ## Haskell Server Pages in the Past
 
