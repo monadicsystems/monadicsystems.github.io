@@ -47,7 +47,7 @@ main = run id do
 ```
 
 `methodGET`, `pathParam`, and `pathEnd` are **parsers**, but instead of parsing text they parse HTTP requests.
-Just like textual parsers, you can sequence parsers using `do` notation and modify their behavior using parser combinators like `optional`.
+Just like textual parsers, you can sequence these parsers using `do` notation and modify their behavior using parser combinators like `optional`.
 
 If you've been following the development of Okapi, you might've noticed that the Okapi DSL looks slightly different compared to previous blog posts. On top of making various changes to Okapi's API to make the library simpler and more ergonomic, I've changed how responses work in Okapi. These changes have been made on a separate branch from `main` called [`hsp`](https://github.com/monadicsystems/okapi/tree/hsp). All changes mentioned in this blog post can be found on that branch.
 
