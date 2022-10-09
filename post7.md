@@ -129,6 +129,7 @@ main :: IO ()
 main = run id do
   methodGET
   pathParam @Text `is` "random"
+  name <- queryParam @Text "name"
   pathEnd
 
   setStatus 200                           -- Set response status to 200
@@ -152,7 +153,7 @@ main = run id do
         write "Congratulations for having your name!"
         write "</h2>"
 
-  case name :: Text of
+  case name of
     "James" -> writeCongrats
     "Janet" -> writeCongrats
     "Alice" -> writeCongrats
