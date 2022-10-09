@@ -172,7 +172,7 @@ Pushing the response into the state allows us to generate parts of the response 
 
 ### Using Template Haskell for HSPs
 
-The `main` procedure defined above is a series of statements that pretty much looks like a server page. If only we could put this series of statements in another file, then we would have Haskell Server Pages. Luckily, we can use Template Haskell for this. The process to take these lists of statements declared in other files and generate a server consists of these steps:
+The `main` procedure defined above is a series of statements that pretty much looks like a server page. If only we could put this series of statements in a seperate file, then we would have a Haskell Server Page. Luckily, we can use Template Haskell for this. The process to take these lists of statements declared in other files and generate a server consists of these steps:
 
 1. At compile time, look for files with the `.hsp` extension in a directory specified by the developer.
 2. Parse the `.hsp` files, indent them, and place the statements within a `do` block to create a large `do` expression.
