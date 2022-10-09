@@ -105,7 +105,7 @@ main = run id do
     Just name -> return $ setPlaintext "Cool name, " <> name <> ". Nice to meet ya!" $ ok
 ```
 
-The change was made to make it possible to implement better HSPs, and in my opinion, this change makes the Okapi DSL more ergonomic in general.
+This change was made to make it possible to implement better HSPs, and in my opinion, this change makes the Okapi DSL more ergonomic in general.
 
 ### Using `write`
 
