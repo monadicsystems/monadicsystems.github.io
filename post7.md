@@ -16,9 +16,9 @@ The paper *[Haskell Server Pages - Functional Programming and the Battle for the
 
 It was published in 2001 and I'm not sure how much it has been used since then. Regardless, many of the concepts dicussed in the paper are very interesting.
 
-## Haskell Server Pages With Okapi
-
 Haskell has a changed a lot since 2001, so I figured it was still worth it to try and implement a modern version of HSPs using Okapi.
+
+## Haskell Server Pages With Okapi
 
 Okapi provides a monadic DSL for describing web servers. Here's an example of a simple web server that greets the user.
 
