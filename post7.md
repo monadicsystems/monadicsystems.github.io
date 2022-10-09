@@ -14,7 +14,7 @@ I wanted to see if server pages could be implemented with Haskell. What could se
 
 The paper *[Haskell Server Pages - Functional Programming and the Battle for the Middle Tier](https://www.researchgate.net/publication/2381809_Haskell_Server_Pages_-_Functional_Programming_and_the_Battle_for_the_Middle_Tier)* shows an implementation of HSPs with a lot of cool features, such as HTML tag literals, pattern matching on HTML tags, and type safe HTML generation.
 
-It was published in 2001 and I'm not sure how much it has been since used then. Regardless, many of the concepts dicussed in the paper are very interesting.
+It was published in 2001 and I'm not sure how much it has been used since then. Regardless, many of the concepts dicussed in the paper are very interesting.
 
 ## Haskell Server Pages With Okapi
 
