@@ -198,7 +198,7 @@ bar.hsp
 greeting.hsp
 ```
 
-File and directory names surrounded in square brackets, like `[x]` and `[y].hsp` in the directory tree above, are treated as path parameters. For example, the file path `my_hsp_files/calc/add/[x]/[y].hsp` corresponds to the route `my_hsp_files/calc/add/<x>/<y>`, where `<x>` and `<y>` are path parameters. You can refer to the path parameter names in square brackets from within your HSP files if:
+File and directory names surrounded in square brackets, like `[x]` and `[y].hsp` in the directory tree above, are treated as path parameters. For example, the file path `my_hsp_files/calc/add/[x]/[y].hsp` corresponds to the route `my_hsp_files/calc/add/<x>/<y>`, where `<x>` and `<y>` are path parameters. You can refer to path parameter names in square brackets from within your HSP files if:
 
 - The HSP file is a descendant of a directory with a name in square brackets
 - The HSP file itself is named with a name in square brackets
