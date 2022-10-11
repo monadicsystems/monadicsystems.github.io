@@ -16,7 +16,7 @@ The paper *[Haskell Server Pages - Functional Programming and the Battle for the
 
 It was published in 2001, but I'm not sure how much it has been used since then. Regardless, many of the concepts dicussed in the paper are very interesting.
 
-Haskell has a changed a lot since 2001, so I figured it was still worth it to try and implement a modern version of HSPs using Okapi.
+Haskell has changed a lot since 2001, so I figured it was still worth it to try and implement a modern version of HSPs using Okapi.
 
 ## Haskell Server Pages With Okapi
 
