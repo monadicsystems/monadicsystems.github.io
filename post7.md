@@ -14,7 +14,7 @@ I wanted to see if server pages could be implemented with Haskell. What would se
 
 The paper *[Haskell Server Pages - Functional Programming and the Battle for the Middle Tier](https://www.researchgate.net/publication/2381809_Haskell_Server_Pages_-_Functional_Programming_and_the_Battle_for_the_Middle_Tier)* shows an implementation of HSPs with a lot of cool features, such as HTML tag literals, pattern matching on HTML tags, and type safe HTML generation.
 
-It was published in 2001 and I'm not sure how much it has been used since then. Regardless, many of the concepts dicussed in the paper are very interesting.
+It was published in 2001, but I'm not sure how much it has been used since then. Regardless, many of the concepts dicussed in the paper are very interesting.
 
 Haskell has a changed a lot since 2001, so I figured it was still worth it to try and implement a modern version of HSPs using Okapi.
 
@@ -49,7 +49,7 @@ main = run id do
 `methodGET`, `pathParam`, and `pathEnd` are **parsers**, but instead of parsing text they parse HTTP requests.
 Just like textual parsers, you can sequence these parsers using `do` notation and modify their behavior using parser combinators like `optional`.
 
-If you've been following the development of Okapi, you might've noticed that the Okapi DSL looks slightly different compared to previous blog posts. On top of making various changes to Okapi's API to make the library simpler and more ergonomic, I've changed how responses work in Okapi. These changes have been made on a separate branch from `main` called [`hsp`](https://github.com/monadicsystems/okapi/tree/hsp). All changes mentioned in this blog post can be found on that branch.
+If you've been following the development of Okapi, you might've noticed that the Okapi DSL looks slightly different compared to previous blog posts and documentation. On top of making various changes to Okapi's API to make the library simpler and more ergonomic, I've changed how responses work in Okapi. These changes have been made on a separate branch from `main` called [`hsp`](https://github.com/monadicsystems/okapi/tree/hsp). All changes mentioned in this blog post can be found on that branch. Updates to the [documentation](https://www.okapi.wiki/) that reflect these changes are coming very soon.
 
 ### How Responding in Okapi Changed
 
@@ -77,9 +77,9 @@ run
 
 , so it takes parsers that don't return anything except the `()` value.
 
-Why is that? Well, the `Response` now resides in the state of the parser and it can be manipulated using functions like `write`, `setHeaders`, `setHTML`, `setJSON`, etc. The greet example you saw above used the `write` function to append data to the response body.
+Why is that? Well, the `Response` now resides in the state of the parser and it can be manipulated using functions like `write`, `overwrite`, `setHeaders`, `setHTML`, `setJSON`, etc. The greet example you saw above used the `write` function to append data to the response body.
 
-Before, you would have to explicitly return a value of type `Response`.
+Before, you would have to explicitly return a value of type `Response`, like so.
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -105,13 +105,11 @@ main = run id do
     Just name -> return $ setPlaintext "Cool name, " <> name <> ". Nice to meet ya!" $ ok
 ```
 
-This change was made to make it possible to implement better HSPs, and in my opinion, this change makes the Okapi DSL more ergonomic in general.
-
 ### Using `write`
 
-By making the response a part of the state, the code for creating responses is a lot more flexible. For example, we now can have a `write` function that's used for appending bytes to whatever is the current state of the response body. This is what we need for HSPs to work and look good.
+By making the response a part of the state, the code for creating responses is a lot more flexible. For example, we now have a `write` function that's used for appending bytes to whatever is the current state of the response body. This is what we need for HSPs to work and look good.
 
-Here's an example of a server page that utilizes various response modifiers, including `write`.
+Here's an example of a server definition that utilizes various response modifiers, including `write`.
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
@@ -180,9 +178,9 @@ The `main` procedure defined above is a series of statements that pretty much lo
    of the directory provided by the developer.
 
 You can use HSPs by using the `hsp` quasiquoter exported by `Okapi.HSP`. You'll also need to turn on the `-XQuasiQuotes` language extension.
-The `hsp` quasiquoter parses the name of the directory that holds your `.hsp` files and generates the correct parser.
+The `hsp` quasiquoter parses the name of the directory that holds your `.hsp` files and generates the correct code.
 
-The structure of the directory given to the `hsp` quasiquoter has an effect on the parser that is generated. The quasiquoter will generate the correct path parsers for each `.hsp` file based on its file path relative to the directory provided by the developer. It is similar to how `Next.js` works. Routing is based on the structure of the directory.
+The structure of the directory given to the `hsp` quasiquoter has an effect on the parser that is generated. It is similar to how `Next.js` works. Routing is based on the structure of the directory.
 
 Here's an example of the structure of an [HSPs directory from the `okapi` GitHub repo](https://github.com/monadicsystems/okapi/tree/hsp/my_hsp_files).
 
@@ -191,16 +189,33 @@ my_hsp_files/
 ├─ bar/
 │  ├─ [age].hsp
 ├─ calc/
-│  ├─ [x]/
-│  │  ├─ [y].hsp
+|  ├─ add/
+│  |  ├─ [x]/
+│  │  |  ├─ [y].hsp
 ├─ greeting/
 │  ├─ [name].hsp
 bar.hsp
 greeting.hsp
 ```
 
-We can generate a functional server from this directory full of `.hsp` files using the `hsp` quasiquoter.
-The [`Main.hs` module defined in the `examples/hsp-test` folder of the `okapi` GitHub repo](https://github.com/monadicsystems/okapi/blob/hsp/examples/hsp-test/Main.hs) does just that.
+File and directory names surrounded in square brackets, like `[x]` and `[y].hsp` in the example directory above, are treated as path parameters. For example, the file path `my_hsp_files/calc/add/[x]/[y].hsp` corresponds to the route `my_hsp_files/calc/add/<x>/<y>`, where `<x>` and `<y>` are path parameters. You can refer to the path parameter names in square brackets from within your HSP files if:
+
+- The HSP file is a descendant of a directory with a path parameter name in square brackets
+- The HSP file itself is named with a path parameter name in square brackets
+
+For example, here's the contents of the `my_hsp_files/calc/add/[x]/[y].hsp` file.
+
+```haskell
+methodGET
+write $ toLBS $ x + (y :: Int)
+```
+
+We simply add the two path parameters `x` and `y`, and `write` the result to the response body.
+A type annotation is needed on at least one of the parameters in this case, so that the compiler knows the type of the parameters.
+Otherwise, the compiler will complain that it doesn't know the type of the `x` and `y` values.
+
+Now that we know how the structure of the HSPs directory affects routing, let's generate a functional server from a directory full of `.hsp` files using the `hsp` quasiquoter.
+The [`Main.hs` module defined in the `examples/hsp-test` folder of the `okapi` GitHub repo](https://github.com/monadicsystems/okapi/blob/hsp/examples/hsp-test/Main.hs) does just that using the `my_hsp_files` directory shown above as the source directory.
 
 ```haskell
 {-# LANGUAGE BlockArguments #-}
@@ -233,7 +248,12 @@ cabal v2-repl okapi:hsp-test-exe
 
 Once everything compiles, type `main` into the ghci prompt and hit 'Enter'. This will start a server on `localhost:3000`.
 
-You'll need to have GHC and cabal installed for this to work.
+You'll need to have `ghc` and `cabal` installed for this to work. I reccommend you use `ghcup` if you don't have these installed already.
+
+> **Note**
+> The above example may or may not work on Windows. Will probably work for MacOS. I ran it on Ubuntu.
+> All functions, data types, etc. from external libraries used in your HSP files need to be in scope in order to avoid compile time errors.
+> For example, in one of the HSP files we use `renderBS` from the `lucid` library, so `Lucid` is imported into `Main.hs` to bring it into scope.
 
 ### Concerns with HSPs
 
