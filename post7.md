@@ -180,9 +180,9 @@ The `main` procedure defined above is a series of statements that pretty much lo
 You can use HSPs by using the `hsp` quasiquoter exported by `Okapi.HSP`. You'll also need to turn on the `-XQuasiQuotes` language extension.
 The `hsp` quasiquoter parses the name of the directory that holds your `.hsp` files and generates the correct code.
 
-The structure of the directory given to the `hsp` quasiquoter has an effect on the parser that is generated. It is similar to how `Next.js` works. Routing is based on the structure of the directory.
+The structure of the directory provided to the `hsp` quasiquoter has an effect on the parser that is generated. It is similar to how `Next.js` works. Routing is based on the structure of the directory.
 
-Here's an example of the structure of an [HSPs directory from the `okapi` GitHub repo](https://github.com/monadicsystems/okapi/tree/hsp/my_hsp_files).
+Here's an example of the structure of an [HSPs directory from the Okapi GitHub repo](https://github.com/monadicsystems/okapi/tree/hsp/my_hsp_files).
 
 ```
 my_hsp_files/
@@ -215,7 +215,7 @@ A type annotation is needed on at least one of the parameters in this case, so t
 Otherwise, the compiler will complain that it doesn't know the type of the `x` and `y` values.
 
 Now that we know how the structure of the HSPs directory affects routing, let's generate a functional server from a directory full of `.hsp` files using the `hsp` quasiquoter.
-The [`Main.hs` module defined in the `examples/hsp-test` folder of the `okapi` GitHub repo](https://github.com/monadicsystems/okapi/blob/hsp/examples/hsp-test/Main.hs) does just that using the `my_hsp_files` directory shown above as the source directory.
+The [`Main.hs` module defined in the `examples/hsp-test` folder of the Okapi GitHub repo](https://github.com/monadicsystems/okapi/blob/hsp/examples/hsp-test/Main.hs) does just that using the `my_hsp_files` directory shown above as the source directory.
 
 ```haskell
 {-# LANGUAGE BlockArguments #-}
@@ -239,14 +239,14 @@ main = Okapi.run id [hsp|my_hsp_files|]
 
 Magic!
 
-To test it out for yourself clone the `hsp` branch of the `okapi` repository to your machine, and run the following commands:
+To test it out for yourself clone the `hsp` branch of the Okapi GitHub repository to your machine, and run the following commands:
 
 ```
 cd okapi
 cabal v2-repl okapi:hsp-test-exe
 ```
 
-Once everything compiles and the ghci prompt appears, type `main` into the prompt and hit 'Enter'. This will start a server on `localhost:3000`.
+Once everything compiles and the `ghci` prompt appears, type `main` into the prompt and hit 'Enter'. This will start a server on `localhost:3000`.
 
 You'll need to have `ghc` and `cabal` installed for this to work. I reccommend you use `ghcup` if you don't have these installed already.
 
@@ -257,11 +257,11 @@ You'll need to have `ghc` and `cabal` installed for this to work. I reccommend y
 
 ### Concerns with HSPs
 
-The current implementation is more of a proof-of-concept and it is nowhere near the best that it could be. Some current downsides with HSPs are that syntax highlighting is lacking. Also, error messages aren't the best if there are syntax errors in your HSP file. The current implementation is very bare bones just to showcase the idea. If it catches on, perhaps it would be possible to add syntax highlighting and other helpers that we get from the Haskell Language Server for HSPs.
+The current implementation is more of a proof-of-concept and it is nowhere near the best that it could be. Some current downsides with HSPs are that syntax highlighting is lacking, error messages aren't the best if there are syntax errors in your HSP file, and documentation in lacking. The current implementation is very bare bones just to showcase the idea. If it catches on, perhaps it would be possible to add syntax highlighting and other helpers that we get from the Haskell Language Server for HSPs.
 
 ## Conclusion
 
-This post just scratches the surface of what can be done with HSPs. In the future I hope to write more about this. In the meantime, feel free to ask questions and/or provide suggestions. I'm looking for contributors. One concern I have with the current implementation of HSPs, and Okapi in general, is the performance. I haven't worried about performance as I'm mostly focused on the ergonomics of the API, but I will definitely be optimizing its performance as time goes on.
+This post just scratches the surface of what can be done with HSPs. Feel free to ask questions and/or provide suggestions. I'm looking for contributors. One concern I have with the current implementation of HSPs, and Okapi in general, is the performance. I haven't worried about performance as I'm mostly focused on the ergonomics of the API, but I will definitely be optimizing its performance as time goes on.
 
 In the future, it may be possible to serve an entire web application from a single zip executable containing HSPs. Just like redbean, but for Haskell. This is something I'm currently working on with the help of [Cosmopolitan](https://justine.lol/cosmopolitan/) and [redbean](https://redbean.dev/) contributors. If this idea interests you and you'd like to help, please send me a DM.
 
