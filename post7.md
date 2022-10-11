@@ -8,7 +8,7 @@ summary: How to implement and use Hasekll Server Pages with Okapi
 
 Recently, I've been playing around with [redbean](https://redbean.dev/). Redbean is a highly portable web server written in Lua with support for [Lua Server Pages](https://redbean.dev/#lua). I really like the idea of Lua Server Pages because of their simplicity and ease of use. It reminded me of PHP.
 
-I wanted to see if server pages could be implemented with Haskell. What would server pages look like in Haskell and how would they compare to server page implementations in other languages?
+I wanted to see if Haskell Server Pages (HSPs) could be implemented with [Okapi](https://www.okapi.wiki/). What would they look like, how would they function, and how would they compare to server pages in other languages?
 
 ## Haskell Server Pages in the Past
 
@@ -198,10 +198,10 @@ bar.hsp
 greeting.hsp
 ```
 
-File and directory names surrounded in square brackets, like `[x]` and `[y].hsp` in the example directory above, are treated as path parameters. For example, the file path `my_hsp_files/calc/add/[x]/[y].hsp` corresponds to the route `my_hsp_files/calc/add/<x>/<y>`, where `<x>` and `<y>` are path parameters. You can refer to the path parameter names in square brackets from within your HSP files if:
+File and directory names surrounded in square brackets, like `[x]` and `[y].hsp` in the directory tree above, are treated as path parameters. For example, the file path `my_hsp_files/calc/add/[x]/[y].hsp` corresponds to the route `my_hsp_files/calc/add/<x>/<y>`, where `<x>` and `<y>` are path parameters. You can refer to the path parameter names in square brackets from within your HSP files if:
 
-- The HSP file is a descendant of a directory with a path parameter name in square brackets
-- The HSP file itself is named with a path parameter name in square brackets
+- The HSP file is a descendant of a directory with a name in square brackets
+- The HSP file itself is named with a name in square brackets
 
 For example, here's the contents of the `my_hsp_files/calc/add/[x]/[y].hsp` file.
 
@@ -246,7 +246,7 @@ cd okapi
 cabal v2-repl okapi:hsp-test-exe
 ```
 
-Once everything compiles, type `main` into the ghci prompt and hit 'Enter'. This will start a server on `localhost:3000`.
+Once everything compiles and the ghci prompt appears, type `main` into the prompt and hit 'Enter'. This will start a server on `localhost:3000`.
 
 You'll need to have `ghc` and `cabal` installed for this to work. I reccommend you use `ghcup` if you don't have these installed already.
 
