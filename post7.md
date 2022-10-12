@@ -166,7 +166,7 @@ main = run id do
       a_ [href_ "https://hackage.haskell.org/package/lucid"] "Learn more about Lucid here"
 ```
 
-Pushing the response into the state allows us to generate parts of the response using directives that we all know and love, like `case` statements, `if_then_else_` statements, `let` statements, and even `forM_` loops. You may be thinking that this looks very imperative, and you would be right. Haskell is the best imperative programming language after all!
+Pushing the response into the state allows us to generate parts of the response using directives that we all know and love, like `case` expressions, `if_then_else_` expressions, `let` expressions, and even `forM_` loops. You may be thinking that this looks very imperative, and you would be right. Haskell is the best imperative programming language after all!
 
 ### Using Template Haskell for HSPs
 
