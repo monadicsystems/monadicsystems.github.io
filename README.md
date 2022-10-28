@@ -9,3 +9,4 @@ Monadic Systems is a software development company specializing in the use of fun
 - [Named Routes in Okapi: Part II](/post3)
 - [Named Routes in Okapi: Part III](/post4)
 - [Haskell Server Pages Using Okapi](/post7)
+- [Web Framework Mimicry](/post8)
