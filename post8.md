@@ -6,7 +6,7 @@ summary: How to mimic other web frameworks with Okapi
 
 # Web Framework Mimicry
 
-> mimicry - the close **external resemblance** of an animal or plant (or part of one) to another animal, plant, or inanimate object.
+> mimicry - the close **external resemblance** of an animal or plant (**or part of one**) to another animal, plant, or inanimate object.
 
 In this post I want to explore how we can use the Okapi to "mimic" other web frameworks.
 
@@ -148,3 +148,18 @@ Due to its' simplicity, I consider Okapi to be "low-level" compared to other web
 Well, Okapi is just a thin abstraction built on top of WAI. It lacks a lot of the built-in features that other frameworks have right out of the box.
 The core of Okapi only provides the types and parsers need to manipulate HTTP requests and responses.
 
+## Mimicking Sinatra-like Frameworks
+
+This refers to frameworks like Scotty, Spock, Flask, etc.
+
+## Mimicking Yesod
+
+I need more type safety
+
+## Mimicking Giraffe
+
+## Mimicking Servant
+
+Can Okapi mimic servant? No. Let's just integrate!
+
+## Conclusion
