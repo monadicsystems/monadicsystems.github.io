@@ -44,8 +44,8 @@ main = run id do
 1. Checks that the request's method is `GET`
 2. Checks that the first path segment of the URL is equal to `greet`
 3. Binds a path parameter or a query parameter to `maybeName`, if it exists. Otherwise, `Nothing` is bound to `maybeName`. This line contains two useful            functions:
-     a. The `optional` parser combinator from the `parser-combinators` library. The parser it is applied to will return `Nothing` instead of failing if the             parser fails
-     b. The `<|>` operator from the `Alternative` typeclass. If the parser on the left side of the operator fails, the parser on the right side of the operator         is tried
+     * The `optional` parser combinator from the `parser-combinators` library. The parser it is applied to will return `Nothing` instead of failing if the              parser fails
+     * The `<|>` operator from the `Alternative` typeclass. If the parser on the left side of the operator fails, the parser on the right side of the operator          is tried
 5. A let expression that assigns the correct value to `greeting` based on the value of `maybeName`
 6. Write `greeting` to the reponse body
 
