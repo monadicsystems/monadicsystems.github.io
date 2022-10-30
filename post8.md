@@ -270,8 +270,6 @@ I'd say that the Method-Path-Handler style has been mimicked successfully. What 
 Yesod. Probably the most-loved web framework in the Haskell ecosystem, and for good reasons. You can think of it as the Ruby framework Rails, but for Haskell.
 Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in it's entirety. One thing that Yesod is probably most know for is it's [type-safe routing]().
 
-## Mimicking Giraffe
-
 ## Mimicking Servant
 
 Can Okapi mimic servant? No. Let's just integrate!
