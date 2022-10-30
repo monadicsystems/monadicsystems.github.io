@@ -93,43 +93,17 @@ Due to its' simplicity, I consider Okapi to be "low-level" compared to other web
 Well, Okapi is just a thin abstraction built on top of WAI. It lacks a lot of the built-in features that other frameworks have right out of the box.
 The core of Okapi only provides the types and parsers need to manipulate HTTP requests and responses.
 
-## Method-Path-Then-Handler Style Frameworks
+## Mimicking Method-Path-Handler Style Frameworks
 
-This refers to frameworks like Scotty, Spock, Laravel, Sinatra, Express, Flask, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function. I'm just going to call this *Method-Path-Then-Handler* style.
+This refers to frameworks like Scotty, Spock, Laravel, Sinatra, Express, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function. I'm just going to call this convention *Method-Path-Handler style*.
 
-We'll create a server that greets a user when a `GET` request is made to `/greeting/<name>`, where `<name>` is path parameter representing the user's name.
+Let's see what a server that greets the user looks like in these Method-Path-Handler style frameworks.
 
-This is what that looks like in Scotty.
+> **Note**
+> I'm excluding imports and the code needed to actually execute the servers.
+> I just want to focus on the endpoint definitions.
 
-```haskell
-main =
-  scotty 3000 $
-    get "/greeting/:name" do
-        name <- param "name"
-        text $ "Hello " <> name
-```
-
-Another Haskell web framework, Spock.
-
-```haskell
-main =
-  runSpock 3000 $ spockT id $
-    get ("hello" <//> ":name") do
-      name <- param' "name"
-      text $ "Hello " <> name
-```
-
-The popular Python micro web framework, Flask.
-
-```python
-app = Flask(__name__)
-
-@app.route("/greeting/<name>")
-def greeting():
-    return f'Hello {name}'
-```
-
-Ruby's popular micro web framework, Sinatra.
+First, Ruby's popular micro web framework, Sinatra.
 
 ```ruby
 get '/greeting/:name' do
@@ -137,17 +111,31 @@ get '/greeting/:name' do
 end
 ```
 
-Express from JavaScript land.
+This is Scotty, a Haskell framework inspired by Sinatra.
+
+```haskell
+greeting = get "/greeting/:name" do
+  name <- param "name"
+  text $ "Hello " <> name
+```
+
+Here's another Haskell web framework inspired by Sinatra, Spock.
+
+```haskell
+greeting = get ("greeting" <//> ":name") do
+  name <- param' "name"
+  text $ "Hello " <> name
+```
+
+Here's what it looks like in the Node.js framework, Express.
 
 ```js
-const app = express()
-
 app.get('/greeting/:name', (req, res) => {
   res.send(`Hello ${req.params.name}`)
 })
 ```
 
-And finally Laravel, a web framework for PHP.
+Finally, Laravel, a web framework for PHP.
 
 ```php
 Route::get('/greeting/{name}', function ($name) {
@@ -155,9 +143,131 @@ Route::get('/greeting/{name}', function ($name) {
 });
 ```
 
+We can see a pattern here. These Method-Path-Handler style frameworks share these 3 traits.
+
+1. The use of higher-order functions, such as `get`, `post`, etc. that represent the HTTP method that the endpoint accepts.
+2. The higher-order functions representing HTTP methods take a pattern as the first argument, usually represented as a string. This pattern represents
+   the URL path that the endpoint will respond to. Path parameters are also defined in this pattern.
+3. The higher-order functions take a function representing the handler as the second argument. This handler is executed if the request uses the correct
+   method and matches the URL path pattern.
+   
+Let's try and *mimic* this style of defining endpoints using Okapi. First, let's define the endpoint we saw in the above examples with Okapi so we can compare it to the Method-Path-Handler style.
+
+```haskell
+greeting = do
+  methodGET
+  pathPart "greeting"
+  name <- pathParam
+  pathEnd
+  write @Text $ "Hello " <> name
+```
+
+This is the most conventional way to implement the endpoint in Okapi. Let's work our way to Method-Path-Handler style from here.
+
+First, let's define those higher-order functions that represent the HTTP method that the endpoint accepts.
+
+```haskell
+get :: MonadServer m => m a -> (a -> m ()) -> m ()
+get p handler = methodGET >> (p >>= handler)
+```
+
+With this function we could now define the greeting endpoint like so.
+
+```haskell
+greeting = get p $ \name -> write @Text $ "Hello " <> name
+  where
+    p = do
+      pathPart "greeting"
+      name <- pathParam
+      pathEnd
+      pure name
+```
+
+This is good, but we can do better. The the first function that we pass into `get`, which represents the pattern for the URL path, can modify the response body if it wants.
+
+```haskell
+greeting = get p $ \name -> write @Text $ "Hello " <> name
+  where
+    p = do
+      pathPart "greeting"
+      name <- pathParam
+      pathEnd
+      write @Text $ "I don't mean what I say. " -- Uh oh!
+      pure name
+```
+
+The compiler won't catch this. Bob, for example, would recieve this response if he hit our endpoint.
+
+```haskell
+I don't mean what I say. Hello Bob
+```
+
+We can prevent this with a better type signature for `get`.
+
+```haskell
+get :: MonadServer m => (forall n. MonadRequest n => n a) -> (a -> m ()) -> m ()
+```
+
+This means that the function we pass in for our path pattern can only affect the request, not the response. If we try to affect the response, we will get a compile time error.
+
+```haskell
+greeting = get p $ \name -> write @Text $ "Hello " <> name
+  where
+    p = do
+      pathPart "greeting"
+      name <- pathParam
+      pathEnd
+      write @Text $ "I don't mean what I say. " -- Not allowed to use this here. GHC says NO!
+      pure name
+```
+
+Better, but still not that close to what we see in Method-Path-Handler style frameworks. We can get closer.
+The main issue with our current implementation is that we have to code pattern for the path ourselves.
+The fact that we can do this is actually great because this gives us the flexibility to implement patterns that might not be possible with just a DSL for specifying the pattern automatically, but our goal isn't to be flexible here. We're trying to mimic these popular Method-Path-Handler style frameworks.
+
+To get even closer to our target, we will use quasiquotation. With quasiquotes we can parse a route pattern DSL and automatically generate the function that is passed into `get`.
+
+```haskell
+greeting = get [p|/greeting/:Text|] \name -> write @Text $ "Hello " <> name
+```
+
+We can use that exact quasiquote in conventional Okapi style too.
+
+```haskell
+main = run id do
+  methodGET
+  name <- [p|/greeting/:Text|]
+  write @Text $ "Hello " <> name
+```
+
+The function generated by the quasiquote is just a parser like the rest of the Okapi parsers, so we can use it with parser combinators like `<|>`.
+
+```haskell
+main = run id do
+  methodGET
+  name <- [p|/greeting/:Text|] <|> [p|/nihao/:Text|]
+  write @Text $ "Hello " <> name
+```
+
+Anyways, let's compare the final result with Sinatra, the poster boy of Method-Path-Handler style frameworks.
+
+
+```ruby
+get '/greeting/:name' do
+  "Hello #{params['name']}"
+end
+```
+
+```haskell
+greeting = get [p|/greeting/:Text|] \name -> write $ "Hello " <> name
+```
+
+I'd say that the Method-Path-Handler style has been mimicked successfully. What else can Okapi mimic?
+
 ## Mimicking Yesod
 
-I need more type safety
+Yesod. Probably the most-loved web framework in the Haskell ecosystem, and for good reasons. You can think of it as the Ruby framework Rails, but for Haskell.
+Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in it's entirety. One thing that Yesod is probably most know for is it's [type-safe routing]().
 
 ## Mimicking Giraffe
 
@@ -166,3 +276,17 @@ I need more type safety
 Can Okapi mimic servant? No. Let's just integrate!
 
 ## Conclusion
+
+, but if we wanted, we could also define it like this.
+
+```haskell
+main = do
+  pathPart "greeting"
+  name <- pathParam
+  write @Text $ "Hello " <> name
+  pathEnd
+  methodGET
+```
+
+Even though this looks way out of order, it has the exact same behavior as the previous implementation! How? Well, you can think of each statement in the
+`do` block as a check against the request. As long as all checks are satisified by the request made to the server, a response is returned. `methodGET` checks that the request is a `GET` request. `pathPart "greeting"` checks that first path part is equal to `"greeting"`. `pathParam` checks that there is another path part and parses it, in this case, as `Text`. `pathEnd` checks that there are no more path segments. `write` appends data to the response body that will be returned if all the checks in the `do` block succeed.
