@@ -259,7 +259,8 @@ end
 ```
 
 ```haskell
-greeting = get [p|/greeting/:Text|] \name -> write $ "Hello " <> name
+greeting = get [p|/greeting/:Text|] \name ->
+  write $ "Hello " <> name
 ```
 
 I'd say that the Method-Path-Handler style has been mimicked successfully. What else can Okapi mimic?
