@@ -145,8 +145,6 @@ const app = express()
 app.get('/greeting/:name', (req, res) => {
   res.send(`Hello ${req.params.name}`)
 })
-
-app.listen(3000)
 ```
 
 And finally Laravel, a web framework for PHP.
