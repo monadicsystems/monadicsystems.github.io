@@ -282,38 +282,66 @@ data App = App
 instance Yesod App
 
 mkYesod "App" [parseRoutes|
-/home HomeR GET
-/person/#Text PersonR GET
-/year/#Integer/month/#Text/day/#Int DateR
-/wiki/*Texts WikiR GET
+/calculator CalcR GET
+/add/#Int/#Int AddR POST
+/sub/#Int/#Int SubR POST
+/sq/#Int SqR POST
 |]
 
-getHomeR :: Handler Html 
-getHomeR = defaultLayout
+getCalcR :: Handler Html
+getCalcR = defaultLayout
   [whamlet|
-    <h1>Welcome!
-    <ul>
-      <li>
-        <a href=@{}>Meet Bob
-      <li>
-        <a href=@{}>
-      <li>
-        <a href=@{}>
+    <h1>Calculator
+    <h2>Add
+    
+    <h2>Subtract
+    
+    <h2>Square
+    
   |]
 
-getPersonR :: Text -> Handler Html
-getPersonR name = defaultLayout [whamlet|<h1>Hello #{name}!|]
+postAddR :: Int -> Int -> Handler Html
+postAddR x y = defaultLayout
+  [whamlet|
+    <h1>Answer: #{x + y}
+  |]
 
-handleDateR :: Integer -> Text -> Int -> Handler Text -- text/plain
-handleDateR year month day =
-    return $
-        T.concat [month, " ", T.pack $ show day, ", ", T.pack $ show year]
+postSubR :: Int -> Int -> Handler Html
+postSubR x y = defaultLayout
+  [whamlet|
+    <h1>Answer: #{x - y}
+  |]
 
-getWikiR :: [Text] -> Handler Text
-getWikiR = return . T.unwords
+postSqR :: Int -> Handler Html
+postSqR x = defaultLayout
+  [whamlet|
+    <h1>Answer: #{x * x}
+  |]
 
 main :: IO ()
 main = warp 3000 App
+```
+
+```haskell
+pattern CalcR :: (Method, Path)
+pattern CalcR = (GET, ["calculator"])
+
+pattern AddR :: Int -> Int -> (Method, Path)
+pattern AddR x y = (POST, ["add", PathParam x, PathParam y])
+
+pattern SubR :: Int -> Int -> (Method, Path)
+pattern SubR x y = (POST, ["sub", PathParam x, PathParam y])
+
+pattern SqR :: Int -> (Method, Path)
+pattern SqR x = (POST, ["sq", PathParam x])
+
+main :: IO ()
+main = run id $ route \case
+  CaclR -> do
+  AddR x y -> do
+  SubR x y -> do
+  SqR x -> do
+  _ -> next
 ```
 
 ## Mimicking Servant
