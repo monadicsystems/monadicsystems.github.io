@@ -150,7 +150,7 @@ We can see a pattern here. These Method-Path-Handler style frameworks share thes
    the URL path that the endpoint will respond to. Path parameters are also defined in this pattern.
 3. The higher-order functions take a function representing the handler as the second argument. This handler is executed if the request uses the correct
    method and matches the URL path pattern.
-   
+
 Let's try and *mimic* this style of defining endpoints using Okapi. First, let's define the endpoint we saw in the above examples with Okapi so we can compare it to the Method-Path-Handler style.
 
 ```haskell
