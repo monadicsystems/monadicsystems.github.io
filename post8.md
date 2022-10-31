@@ -88,10 +88,10 @@ pong = do
 ```
 
 As you can see, a lot can be accomplished with primitive functions like `pathParam`, `methodGET`, `queryParam`, etc.
-Since Okapi is a monadic DSL, it is intuitive to use, easy to compose, and we can even apply algebraic properties to our server descriptions.
-Due to its' simplicity, I consider Okapi to be "low-level" compared to other web frameworks. What do I mean by this?
+Since Okapi is a monadic DSL, it is intuitive to use, easy to compose, and we can even apply our knowledge of algebraic properties when using it.
+Due to its' simplicity, I consider Okapi to be lower level compared to other web frameworks. What do I mean by this?
 Well, Okapi is just a thin abstraction built on top of WAI. It lacks a lot of the built-in features that other frameworks have right out of the box.
-The core of Okapi only provides the types and parsers need to manipulate HTTP requests and responses.
+The core of Okapi only provides the types and parsers need to manipulate HTTP requests and responses. This gives us a lot of flexibility to build on top of it.
 
 ## Mimicking Method-Path-Handler Style Frameworks
 
