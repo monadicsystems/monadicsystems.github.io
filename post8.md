@@ -228,7 +228,7 @@ The fact that we can do this is actually great because this gives us the flexibi
 To get even closer to our target, we will use quasiquotation. With quasiquotes we can parse a route pattern DSL and automatically generate the function that is passed into `get`.
 
 ```haskell
-greeting = get [p|/greeting/:Text|] \name -> write @Text $ "Hello " <> name
+greeting = get [p|/greeting/:Text|] \name -> write $ "Hello " <> name
 ```
 
 We can use that exact quasiquote in conventional Okapi style too.
