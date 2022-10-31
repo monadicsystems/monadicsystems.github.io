@@ -251,6 +251,7 @@ main = run id do
 
 Anyways, let's compare the final result with Sinatra, the poster boy of Method-Path-Handler style frameworks.
 
+Here's the greeting endpoint implemented using Sinatra.
 
 ```ruby
 get '/greeting/:name' do
@@ -258,17 +259,62 @@ get '/greeting/:name' do
 end
 ```
 
+Here's the same greeting endpoint implemented using the core Okapi library, plus a quasiquoter for generating the path parser.
+
 ```haskell
 greeting = get [p|/greeting/:Text|] \name ->
   write $ "Hello " <> name
 ```
 
-I'd say that the Method-Path-Handler style has been mimicked successfully. What else can Okapi mimic?
+I'd say that we successfully mimicked Method-Path-Handler style web frameworks with Okapi.
 
 ## Mimicking Yesod
 
-Yesod. Probably the most-loved web framework in the Haskell ecosystem, and for good reasons. You can think of it as the Ruby framework Rails, but for Haskell.
-Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in it's entirety. One thing that Yesod is probably most know for is it's [type-safe routing]().
+Yesod. Probably the most-used web framework in the Haskell ecosystem, and for good reasons. You can think of it as Ruby on Rails, but replace Ruby with
+Haskell. Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in its entirety.
+
+One aspect of Yesod that makes it really useful is its [type-safe routing](). By type-safe routing I mean a routing system in which types are used to guarantee consistency between code that is generating URLs, and code that is routing URLs to the appropriate handlers. Let's see how this is accomplished in Yesod, and then let's try to mimic this useful feature in Okapi.
+
+Here's a good example from the official [Yesod Web Framework Book]() that I've modified slightly.
+
+```haskell
+data App = App
+instance Yesod App
+
+mkYesod "App" [parseRoutes|
+/home HomeR GET
+/person/#Text PersonR GET
+/year/#Integer/month/#Text/day/#Int DateR
+/wiki/*Texts WikiR GET
+|]
+
+getHomeR :: Handler Html 
+getHomeR = defaultLayout
+  [whamlet|
+    <h1>Welcome!
+    <ul>
+      <li>
+        <a href=@{}>Meet Bob
+      <li>
+        <a href=@{}>
+      <li>
+        <a href=@{}>
+  |]
+
+getPersonR :: Text -> Handler Html
+getPersonR name = defaultLayout [whamlet|<h1>Hello #{name}!|]
+
+handleDateR :: Integer -> Text -> Int -> Handler Text -- text/plain
+handleDateR year month day =
+    return $
+        T.concat [month, " ", T.pack $ show day, ", ", T.pack $ show year]
+
+getWikiR :: [Text] -> Handler Text
+getWikiR = return . T.unwords
+
+main :: IO ()
+main = warp 3000 App
+```
 
 ## Mimicking Servant
 
