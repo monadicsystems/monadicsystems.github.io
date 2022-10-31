@@ -18,9 +18,9 @@ Okapi has changed a bit since my last post.
 If you've been reading my previous blog posts, this is for you.
 If this is your first time reading about Okapi, now is a great time to jump in.
 
-Okapi is a monadic DSL for decribing web servers. Okapi exports a variety of simple *HTTP request parsers* that can be composed using `do` notation and other operators to create more complicated parsers.
+Okapi is a monadic DSL for decribing web servers. Okapi exports a variety of simple *HTTP request parsers* that can be combined with each other using `do` notation and parser combinators to create more complicated parsers.
 
-Here's an example web server from the official [Okapi documentation](https://www.okapi.wiki/).
+Here's an example web server from the official [Okapi documentation](https://www.okapi.wiki/) that greets the user.
 
 ```haskell
 {-# LANGUAGE BlockArguments #-}
@@ -75,23 +75,21 @@ We can use a rule similar to the distributive property of multiplication to simp
 main = run id do
   methodGET
   ping <|> pong
-  
+
 ping = do
   pathPart "ping"
   pathEnd
   write @Text "pong"
-  
+
 pong = do
   pathPart "pong"
   pathEnd
   write @Text "ping"
 ```
 
-As you can see, a lot can be accomplished with primitive functions like `pathParam`, `methodGET`, `queryParam`, etc.
 Since Okapi is a monadic DSL, it is intuitive to use, easy to compose, and we can even apply our knowledge of algebraic properties when using it.
-Due to its' simplicity, I consider Okapi to be lower level compared to other web frameworks. What do I mean by this?
-Well, Okapi is just a thin abstraction built on top of WAI. It lacks a lot of the built-in features that other frameworks have right out of the box.
-The core of Okapi only provides the types and parsers need to manipulate HTTP requests and responses. This gives us a lot of flexibility to build on top of it.
+
+Compared to other web frameworks, Okapi is relatively "low-level". This gives the developer the flexibility to build abstractions on top of Okapi that suit their specific needs and preferences. We will explore this aspect of the library by using it to try implementing conventions and patterns that exist in other web frameworks.
 
 ## Mimicking Method-Path-Handler Style Frameworks
 
@@ -273,9 +271,9 @@ I'd say that we successfully mimicked Method-Path-Handler style web frameworks w
 Yesod. Probably the most-used web framework in the Haskell ecosystem, and for good reasons. You can think of it as Ruby on Rails, but replace Ruby with
 Haskell. Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in its entirety.
 
-One aspect of Yesod that makes it really useful is its [type-safe routing](). By type-safe routing I mean a routing system in which types are used to guarantee consistency between code that is generating URLs, and code that is routing URLs to the appropriate handlers. Let's see how this is accomplished in Yesod, and then let's try to mimic this useful feature in Okapi.
+One aspect of Yesod that makes it really useful is its [type-safe routing](). By type-safe routing I mean a routing system in which types are used to guarantee consistency between the code that is generating URLs, and the code that is routing URLs to their appropriate handlers. Let's see how this is accomplished in Yesod, and then let's try to mimic this useful feature in Okapi.
 
-Here's a good example from the official [Yesod Web Framework Book]() that I've modified slightly.
+Here's a good example from the official [Yesod Web Framework Book]() that I've modified slightly to create a basic calculator app.
 
 ```haskell
 data App = App
@@ -335,6 +333,12 @@ pattern SubR x y = (POST, ["sub", PathParam x, PathParam y])
 pattern SqR :: Int -> (Method, Path)
 pattern SqR x = (POST, ["sq", PathParam x])
 
+route :: MonadServer m => ((Method, Path) -> m ()) -> m ()
+route matcher = do
+  requestMethod <- method
+  requestPath   <- path
+  matcher (requestMethod, requestPath)
+
 main :: IO ()
 main = run id $ route \case
   CalcR -> do
@@ -346,7 +350,29 @@ main = run id $ route \case
 
 ## Mimicking Servant
 
-Can Okapi mimic servant? No. Let's just integrate!
+Servant. My first Haskell web framework, and one of the most practical uses of type-level programming that I know of.
+In Servant, you define your API endpoints as types.
+
+```haskell
+```
+
+Cool, right? This isn't just for show though. By using types to define API endpoints, we not only get type-safe routing as we defined it in the previous section, but also automatic client-side code generation, automatic API documentation generation, and stronger formal guarantees about the API at compile-time. Why is the fact that we have stronger formal gurantees about our API at compile time important? What does this mean? Well, it means we know more about the behavior of the API before we even execute it. Before we run the program we know what type of requests our endpoints will accept, what type of data they will return, and even what type of errors they may throw. Knowing all of this information at compile time is useful because we get practical features like automatic client-side code generation and API documentation generation for free.
+
+So, can we mimic this level of type-safety in Okapi? The short answer is, no. A mentor of mine mentioned that it maybe possible to achieve more type-safety with Okapi by using [*indexed monads*](). I won't go into detail about what indexed monads are here, but It's an interesting topic and I suggest you read about them if you're already fairly comfortable with monads. Anyways, even if we did make Okapi an indexed monadic DSL it would require us to change the core library quite drastically which is something we're trying to avoid here. So, are there any other options?
+
+Instead of trying to mimic the power of Servant, let's form a symbiotic relationship with Servant instead.
+
+> symbiosis - interaction between two different organisms living in close physical association, **typically to the advantage of both**.
+
+Since Okapi and Servant share a common ancestor, WAI, we can use them with each other without much friction.
+
+```haskell
+```
+
+This is great for a few reasons:
+
+1. You can introduce Okapi into your long-standing Servant project, or switch from your prototype Okapi project to Servant
+2. 
 
 ## Conclusion
 
