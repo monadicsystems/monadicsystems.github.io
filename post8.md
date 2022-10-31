@@ -337,7 +337,7 @@ pattern SqR x = (POST, ["sq", PathParam x])
 
 main :: IO ()
 main = run id $ route \case
-  CaclR -> do
+  CalcR -> do
   AddR x y -> do
   SubR x y -> do
   SqR x -> do
