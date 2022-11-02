@@ -67,6 +67,25 @@ route matcher = do
   
 data Msg = Msg Method Path
 
+data Event =
+  Click
+  | Key Char
+  | ...
+  
+data Target =
+  Id Text
+  | Class Text
+  | Element Text
+  | ...
+
+data Swap =
+  Inner
+  | Outer
+  | ...
+
+on :: Trigger -> Msg -> Target -> swap -> [Attribute]
+on = undefined
+
 main :: IO ()
 main = run id $ route \case
   CalcR -> do
