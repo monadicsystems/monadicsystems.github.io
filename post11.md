@@ -47,17 +47,11 @@ view model =
 ```
 
 ```haskell
-pattern CalcR :: (Method, Path)
-pattern CalcR = (GET, ["calculator"])
+pattern Increment :: (Method, Path)
+pattern Increment = (GET, ["increment"])
 
-pattern AddR :: Int -> Int -> (Method, Path)
-pattern AddR x y = (POST, ["add", PathParam x, PathParam y])
-
-pattern SubR :: Int -> Int -> (Method, Path)
-pattern SubR x y = (POST, ["sub", PathParam x, PathParam y])
-
-pattern SqR :: Int -> (Method, Path)
-pattern SqR x = (POST, ["sq", PathParam x])
+pattern Decrement :: (Method, Path)
+pattern Decrement = (GET, ["decrement"])
 
 route :: MonadServer m => ((Method, Path) -> m ()) -> m ()
 route matcher = do
@@ -65,7 +59,7 @@ route matcher = do
   requestPath   <- path
   matcher (requestMethod, requestPath)
   
-data Msg = Msg Method Path
+data Msg = Msg (Method, Path)
 
 data Trigger =
   Click
@@ -88,10 +82,8 @@ on = undefined
 
 main :: IO ()
 main = run id $ route \case
-  CalcR -> do
-  AddR x y -> do
-  SubR x y -> do
-  SqR x -> do
+  Increment -> do
+  Decrement -> do
   _ -> next
 ```
 
