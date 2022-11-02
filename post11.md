@@ -67,7 +67,7 @@ route matcher = do
   
 data Msg = Msg Method Path
 
-data Event =
+data Trigger =
   Click
   | Key Char
   | ...
@@ -83,7 +83,7 @@ data Swap =
   | Outer
   | ...
 
-on :: Trigger -> Msg -> Target -> swap -> [Attribute]
+on :: Trigger -> Msg -> Target -> Swap -> [Attribute]
 on = undefined
 
 main :: IO ()
