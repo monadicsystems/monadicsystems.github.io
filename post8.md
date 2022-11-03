@@ -8,16 +8,12 @@ summary: How to mimic other web frameworks with Okapi
 
 > mimicry - the close **external resemblance** of an animal or plant (**or part of one**) to another animal, plant, or inanimate object.
 
-In this post I want to explore how we can use the Okapi to "mimic" other web frameworks.
+In this post I want to explore how we can use the [Okapi micro web framework]() to "mimic" other web frameworks.
 
 ## What's Okapi?
 
 > **Note**
 > You can skip this section if you're already familiar with Okapi.
-
-Okapi has changed a bit since my last post.
-If you've been reading my previous blog posts, this is for you.
-If this is your first time reading about Okapi, now is a great time to jump in.
 
 Okapi is a monadic DSL for decribing web servers. Okapi exports a variety of simple *HTTP request parsers* that can be combined with each other using `do` notation and parser combinators to create more complicated parsers.
 
@@ -27,13 +23,12 @@ Here's an example web server from the official [Okapi documentation](https://www
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 import Control.Monad.Combinators
 import Data.Text
 
 main = run id do
-  methodGET -- (1)        
+  methodGET -- (1)
   pathPart "greet" -- (2)
   maybeName <- optional $ pathParam <|> queryParam "name" -- (3)
   pathEnd -- (4)
@@ -52,7 +47,7 @@ main = run id do
 5. A let expression that assigns the correct value to `greeting` based on the value of `maybeName`
 6. Write `greeting` to the response body
 
-Here's another example of simple server that returns `ping` on a `GET` request to `/pong`, and `pong` on `GET` request to `ping`. 
+Here's another example of simple server that returns `ping` on a `GET` request to `/pong`, and `pong` on `GET` request to `/ping`. 
 
 ```haskell
 main = run id do
@@ -91,13 +86,13 @@ pong = do
 
 Since Okapi is a monadic DSL, it is intuitive to use, easy to compose, and even has some basic algebraic properties.
 
-Compared to other web frameworks, Okapi is relatively "low-level". This gives the developer the flexibility to build abstractions on top of Okapi that suit their specific needs and preferences. We will explore this aspect of the library by using it to implement conventions and patterns that exist in other web frameworks.
+Compared to other web frameworks, Okapi is relatively "low-level". This gives developers the flexibility to build abstractions on top of Okapi that suit their specific needs and preferences. We will explore this aspect of the library by using it to implement conventions and patterns that exist in other web frameworks.
 
 ## Mimicking Method-Path-Handler Style Frameworks
 
-This refers to frameworks like Scotty, Spock, Laravel, Sinatra, Express, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function. I'm just going to call this convention *Method-Path-Handler style*.
+By *Method-Path-Handler style frameworks* I mean frameworks like Scotty, Spock, Laravel, Sinatra, Express, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function.
 
-Let's see what a server that greets the user looks like in these Method-Path-Handler style frameworks.
+Let's see what a server that greets the user looks like in these kind of frameworks.
 
 > **Note**
 > I'm excluding imports and the code needed to actually execute the servers.
@@ -139,11 +134,11 @@ Finally, Laravel, a web framework for PHP.
 
 ```php
 Route::get('/greeting/{name}', function ($name) {
-    return 'Hello '.$name;
+  return 'Hello '.$name;
 });
 ```
 
-We can see a pattern here. These Method-Path-Handler style frameworks share these 3 traits.
+We can see a pattern here. Method-Path-Handler style frameworks share these 3 traits.
 
 1. The use of higher-order functions, such as `get`, `post`, etc. that represent the HTTP method that the endpoint accepts.
 2. The higher-order functions representing HTTP methods take a pattern as the first argument, usually represented as a string. This pattern represents
@@ -151,18 +146,18 @@ We can see a pattern here. These Method-Path-Handler style frameworks share thes
 3. The higher-order functions take a function representing the handler as the second argument. This handler is executed if the request uses the correct
    method and matches the URL path pattern.
 
-Let's try and *mimic* this style of defining endpoints using Okapi.
+Let's try and *mimic* this style of defining endpoints using Okapi. The most conventional way to implement the endpoint in plain Okapi is the following. 
 
 ```haskell
 greeting = do
   methodGET
   pathPart "greeting"
-  name <- pathParam
+  name <- pathParam @Text
   pathEnd
-  write @Text $ "Hello " <> name
+  write $ "Hello " <> name
 ```
 
-That is the most conventional way to implement the endpoint in plain Okapi. Let's work our way to Method-Path-Handler style from here.
+Let's work our way towards Method-Path-Handler style from here.
 
 First, let's define a higher-order function representing the HTTP method that the endpoint accepts.
 
@@ -184,7 +179,7 @@ greeting = get p $ \name -> write @Text $ "Hello " <> name
 ```
 
 `p` represents the path pattern in Method-Path-Handler style frameworks. It's job is to extract data from the path of the request and return it so the handler
-can consume it.
+can use it.
 
 This is good, but we can do better. The the `p` parser that we pass into `get`, which represents the pattern for the URL path, can modify the response body if it wants. For example, we could do the following with `p`.
 
@@ -199,7 +194,7 @@ greeting = get p $ \name -> write @Text $ "Hello " <> name
       pure name
 ```
 
-The `p` parser is only supposed to extract data from the HTTP request, but a developer may modify the HTTP response by mistake and the compiler won't catch this. Bob, for example, would recieve this response if he hit this faulty endpoint.
+The `p` parser is only supposed to extract data from the HTTP request, but a developer may modify the HTTP response by mistake when defining `p` and the compiler won't catch it. Bob, for example, would recieve this response if he hit this faulty endpoint.
 
 ```haskell
 I don't mean what I say. Hello Bob
@@ -211,7 +206,7 @@ We can prevent this with a better type signature for `get`.
 get :: MonadServer m => (forall n. MonadRequest n => n a) -> (a -> m ()) -> m ()
 ```
 
-This means that the function we pass in for our path pattern can only affect the request, not the response. If we try to affect the response with the `p` parser, we will get a compile time error.
+This means that the function we pass in for our path pattern can only affect the request, not the response. If the definition of `p` affects the response in any way, we'll get a compile time error.
 
 ```haskell
 greeting = get p $ \name -> write @Text $ "Hello " <> name
@@ -220,22 +215,22 @@ greeting = get p $ \name -> write @Text $ "Hello " <> name
       pathPart "greeting"
       name <- pathParam
       pathEnd
-      write @Text $ "I don't mean what I say. " -- Not allowed to use this here. GHC says NO!
+      write @Text "I don't mean what I say. " -- Not allowed to use this here. GHC says NO!
       pure name
 ```
 
 Better, but still not that close to what we see in Method-Path-Handler style frameworks. We can get closer.
 The main issue with our current implementation is that we have to implement the pattern for the path manually.
 
-The fact that we can do this is actually great because this gives us the flexibility to implement patterns that might not be possible to describe with a DSL, but our goal isn't to be flexible here. Our goal is to mimic these popular Method-Path-Handler style frameworks.
+The fact that we can do this is actually great because this gives us the flexibility to implement patterns that might not be possible to describe with a DSL, but our goal isn't to be flexible here. Our goal is to mimic Method-Path-Handler style frameworks.
 
-To get even closer to our target, we will use quasiquotation. With quasiquotes we can parse a domain specific language that represents the path pattern, and generate the function that is passed into `get`.
+To get even closer to our target, we will use quasiquotation. With quasiquotes we can parse a domain specific language that represents the path pattern, and generate the path parser that is passed into `get`.
 
 ```haskell
 greeting = get [p|/greeting/:Text|] \name -> write $ "Hello " <> name
 ```
 
-We can use that exact quasiquote in conventional Okapi style too.
+We can use the `p` quasiquote in conventional Okapi style too.
 
 ```haskell
 main = run id do
@@ -253,7 +248,7 @@ main = run id do
   write @Text $ "Hello " <> name
 ```
 
-You can also define query parameters, optional parameters, etc. See the implementation [here]() if you're interested. I'll probably write more about this quasiquoter in a future blog post.
+You can also define query parameters, optional parameters, etc. with the `p` quasiquoter. See the implementation [here]() if you're interested. I'll probably write more about this quasiquoter in a future blog post.
 
 Anyways, let's compare the final result with Sinatra, the poster boy of Method-Path-Handler style frameworks.
 
@@ -279,67 +274,52 @@ I'd say that we successfully mimicked Method-Path-Handler style web frameworks w
 Yesod. Probably the most-used web framework in the Haskell ecosystem, and for good reasons. You can think of it as Ruby on Rails, but replace Ruby with
 Haskell. Yesod is a large beast compared to Okapi and has many features, so we will not attempt to mimic Yesod in its entirety.
 
-One aspect of Yesod that makes it really useful is its [type-safe routing](). By type-safe routing I mean a routing system in which types are used to guarantee consistency between the code that is generating URLs, and the code that is routing URLs to their appropriate handlers. Let's see how this is accomplished in Yesod, and then let's try to mimic this useful feature in Okapi.
+One aspect of Yesod that makes it really useful is its [*type-safe routing*](). By type-safe routing I mean a routing system in which types are used to guarantee consistency between the code that is generating URLs, and the code that is routing URLs to their appropriate handlers. This is especially useful if we have a server-side rendered web application, and we need to link one page of our web application to another.
 
-Here's a simple example from the official [Yesod Web Framework Book]() that I've modified slightly to create a basic calculator app.
+Let's see how this is accomplished in Yesod, and then let's try to mimic this useful feature in Okapi. Here's a simple example from the official [Yesod Web Framework Book]() that I've modified to create a basic website that just squares numbers and shows the results.
 
 ```haskell
 data App = App
 instance Yesod App
 
 mkYesod "App" [parseRoutes|
-/calculator CalcR GET
-/add/#Int/#Int AddR POST
-/sub/#Int/#Int SubR POST
-/sq/#Int SqR POST
+/ HomeR GET
+/square/#Int SqR GET
 |]
 
-getCalcR :: Handler Html
-getCalcR = defaultLayout
+getHomeR :: Handler Html
+getHomeR = defaultLayout
   [whamlet|
-    <h1>Calculator
-    <h2>Add
-    
-    <h2>Subtract
-    
-    <h2>Square
-    
+    <h1>Welcome!
+    <a href=@{SqR 0}>Squares starting at 0
   |]
 
-postAddR :: Int -> Int -> Handler Html
-postAddR x y = defaultLayout
-  [whamlet|
-    <h1>Answer: #{x + y}
-  |]
-
-postSubR :: Int -> Int -> Handler Html
-postSubR x y = defaultLayout
-  [whamlet|
-    <h1>Answer: #{x - y}
-  |]
-
-postSqR :: Int -> Handler Html
-postSqR x = defaultLayout
-  [whamlet|
-    <h1>Answer: #{x * x}
-  |]
+getSqR :: Int -> Handler Html
+getSqR n = do
+  let
+    prev = n - 1
+    next = n + 1  
+  defaultLayout
+    [whamlet|
+      <b>The square of #{n} is #{n * n}.
+      <a href=@{SqR prev}>What's the square of #{prev}?
+      <a href=@{SqR next}>What's the square of #{next}?
+      <a href=@{HomeR}>Go Home
+    |]
 
 main :: IO ()
 main = warp 3000 App
 ```
 
+
+
+
 ```haskell
-pattern CalcR :: (Method, Path)
-pattern CalcR = (GET, ["calculator"])
-
-pattern AddR :: Int -> Int -> (Method, Path)
-pattern AddR x y = (POST, ["add", PathParam x, PathParam y])
-
-pattern SubR :: Int -> Int -> (Method, Path)
-pattern SubR x y = (POST, ["sub", PathParam x, PathParam y])
+pattern HomeR :: (Method, Path)
+pattern HomeR = (GET, [])
 
 pattern SqR :: Int -> (Method, Path)
-pattern SqR x = (POST, ["sq", PathParam x])
+pattern SqR n = (GET, ["square", PathParam n])
 
 route :: MonadServer m => ((Method, Path) -> m ()) -> m ()
 route matcher = do
@@ -349,10 +329,8 @@ route matcher = do
 
 main :: IO ()
 main = run id $ route \case
-  CalcR -> do
-  AddR x y -> do
-  SubR x y -> do
-  SqR x -> do
+  HomeR -> do
+  SqR n -> do
   _ -> next
 ```
 
