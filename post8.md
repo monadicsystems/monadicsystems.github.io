@@ -8,14 +8,14 @@ summary: How to mimic other web frameworks with Okapi
 
 > mimicry - the close **external resemblance** of an animal or plant (**or part of one**) to another animal, plant, or inanimate object.
 
-In this post I want to explore how we can use the [Okapi micro web framework]() to "mimic" other web frameworks.
+In this post I want to explore how we can use [Okapi]() to "mimic" other web frameworks.
 
 ## What's Okapi?
 
 > **Note**
 > You can skip this section if you're already familiar with Okapi.
 
-Okapi is a monadic DSL for decribing web servers. Okapi exports a variety of simple *HTTP request parsers* that can be combined with each other using `do` notation and parser combinators to create more complicated parsers.
+Okapi is a monadic DSL for decribing web servers. Okapi provides simple *HTTP request parsers* that can be combined with each other using `do` notation and parser combinators to create more complicated parsers.
 
 Here's an example web server from the official [Okapi documentation](https://www.okapi.wiki/) that greets the user.
 
@@ -40,14 +40,15 @@ main = run id do
 
 1. Checks that the request's method is `GET`
 2. Checks that the first part of the URL path is equal to `greet`
-3. Binds a path parameter or a query parameter to `maybeName`, if it exists. Otherwise, `Nothing` is bound to `maybeName`. This line contains two useful            functions:
-     * The `optional` parser combinator from the `parser-combinators` library. The parser it is applied to will return `Nothing` instead of failing if the              parser fails
+3. Binds a path parameter or a query parameter to `maybeName`, if it exists. Otherwise, `Nothing` is bound to `maybeName`. This line contains two useful            parser combinators:
+     * The `optional` parser combinator from the `parser-combinators` library. This transforms the result of a parser into `Nothing` if it fails, or                    `Just value` if it succeeds
      * The `<|>` operator from the `Alternative` typeclass. If the parser on the left side of the operator fails, the parser on the right side of the operator          is tried
 4. Checks that the request has no more remaining path parts
 5. A let expression that assigns the correct value to `greeting` based on the value of `maybeName`
 6. Write `greeting` to the response body
 
-Here's another example of simple server that returns `ping` on a `GET` request to `/pong`, and `pong` on `GET` request to `/ping`. 
+Here's another example of simple server that returns `ping` on a `GET` request to `/pong`, and `pong` on `GET` request to `/ping`.
+Notice how we use the `<|>` operator again to combine endpoint definitions.
 
 ```haskell
 main = run id do
@@ -84,19 +85,19 @@ pong = do
   write @Text "ping"
 ```
 
-Since Okapi is a monadic DSL, it is intuitive to use, easy to compose, and even has some basic algebraic properties.
-
-Compared to other web frameworks, Okapi is relatively "low-level". This gives developers the flexibility to build abstractions on top of Okapi that suit their specific needs and preferences. We will explore this aspect of the library by using it to implement conventions and patterns that exist in other web frameworks.
+Besides the one we just used, Okapi has other algebraic properties that we can use to reason about and simplify our server definitions.
 
 ## Mimicking Method-Path-Handler Style Frameworks
 
-By *Method-Path-Handler style frameworks* I mean frameworks like Scotty, Spock, Laravel, Sinatra, Express, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function.
+Compared to other web frameworks, Okapi is relatively "low-level". This gives developers the flexibility to build abstractions on top of Okapi that suit their specific needs and preferences. We will explore this aspect of the library by using it to implement conventions and patterns that exist in other web frameworks. 
+
+First, we'll start by mimicking what I call *Method-Path-Handler style frameworks*. I mean frameworks like Scotty, Spock, Laravel, Sinatra, Express, etc. where you declare your server's endpoints by specifying a request method, a path pattern, and then a handler function.
 
 Let's see what a server that greets the user looks like in these kind of frameworks.
 
 > **Note**
 > I'm excluding imports and the code needed to actually execute the servers.
-> I just want to focus on the endpoint definitions.
+> I just want to focus on the code needed to define an endpoint.
 
 First, Ruby's popular micro web framework, Sinatra.
 
@@ -140,7 +141,7 @@ Route::get('/greeting/{name}', function ($name) {
 
 We can see a pattern here. Method-Path-Handler style frameworks share these 3 traits.
 
-1. The use of higher-order functions, such as `get`, `post`, etc. that represent the HTTP method that the endpoint accepts.
+1. The use of higher-order functions, such as `get`, `post`, etc. to represent the HTTP method that the endpoint accepts.
 2. The higher-order functions representing HTTP methods take a pattern as the first argument, usually represented as a string. This pattern represents
    the URL path that the endpoint will respond to. Path parameters are also defined in this pattern.
 3. The higher-order functions take a function representing the handler as the second argument. This handler is executed if the request uses the correct
@@ -163,25 +164,27 @@ First, let's define a higher-order function representing the HTTP method that th
 
 ```haskell
 get :: MonadServer m => m a -> (a -> m ()) -> m ()
-get p handler = methodGET >> (p >>= handler)
+get getParams handler = do
+  methodGET
+  params <- p
+  handler params
 ```
 
 With this function we can now define the greeting endpoint like so.
 
 ```haskell
-greeting = get p $ \name -> write @Text $ "Hello " <> name
+greeting = get getParams $ \name -> write @Text $ "Hello " <> name
   where
-    p = do
+    getParams = do
       pathPart "greeting"
       name <- pathParam
       pathEnd
       pure name
 ```
 
-`p` represents the path pattern in Method-Path-Handler style frameworks. It's job is to extract data from the path of the request and return it so the handler
-can use it.
+`getParams` represents the path pattern that we see in Method-Path-Handler style frameworks. It's job is to extract data from the path of the request and return it so the handler can use it.
 
-This is good, but we can do better. The the `p` parser that we pass into `get`, which represents the pattern for the URL path, can modify the response body if it wants. For example, we could do the following with `p`.
+This is good, but we can do better. The the `getParams` parser that we pass into `get`, which represents the pattern for the URL path, can modify the response body if it wants. For example, we could do the following with `getParams`.
 
 ```haskell
 greeting = get p $ \name -> write @Text $ "Hello " <> name
@@ -194,7 +197,7 @@ greeting = get p $ \name -> write @Text $ "Hello " <> name
       pure name
 ```
 
-The `p` parser is only supposed to extract data from the HTTP request, but a developer may modify the HTTP response by mistake when defining `p` and the compiler won't catch it. Bob, for example, would recieve this response if he hit this faulty endpoint.
+The `getParams` parser is only supposed to extract data from the HTTP request, but in the above example we're modifying the HTTP response by mistake in the definition of `getParams`. The compiler won't catch this mistake. Bob, for example, would recieve this response if he hit this faulty endpoint.
 
 ```haskell
 I don't mean what I say. Hello Bob
@@ -206,12 +209,12 @@ We can prevent this with a better type signature for `get`.
 get :: MonadServer m => (forall n. MonadRequest n => n a) -> (a -> m ()) -> m ()
 ```
 
-This means that the function we pass in for our path pattern can only affect the request, not the response. If the definition of `p` affects the response in any way, we'll get a compile time error.
+This means that the parser representing our path pattern can only affect the request, not the response. If the implementation of the first argument to `get` affects the response in any way, we'll get a compile time error.
 
 ```haskell
-greeting = get p $ \name -> write @Text $ "Hello " <> name
+greeting = get getParams $ \name -> write @Text $ "Hello " <> name
   where
-    p = do
+    getParams = do
       pathPart "greeting"
       name <- pathParam
       pathEnd
@@ -260,7 +263,7 @@ get '/greeting/:name' do
 end
 ```
 
-Here's the same greeting endpoint implemented using the core Okapi library, plus a quasiquoter we implemented for generating the path parser automatically.
+Here's the same greeting endpoint implemented using the core Okapi library, plus the `p` quasiquote we implemented.
 
 ```haskell
 greeting = get [p|/greeting/:Text|] \name ->
@@ -282,12 +285,12 @@ Let's see how this is accomplished in Yesod, and then let's try to mimic this us
 data App = App
 instance Yesod App
 
-mkYesod "App" [parseRoutes|
+mkYesod "App" [parseRoutes| -- (1)
 / HomeR GET
 /square/#Int SqR GET
 |]
 
-getHomeR :: Handler Html
+getHomeR :: Handler Html -- (2)
 getHomeR = defaultLayout
   [whamlet|
     <h1>Welcome!
@@ -300,7 +303,7 @@ getSqR n = do
     prev = n - 1
     next = n + 1  
   defaultLayout
-    [whamlet|
+    [whamlet| -- (3)
       <b>The square of #{n} is #{n * n}.
       <a href=@{SqR prev}>What's the square of #{prev}?
       <a href=@{SqR next}>What's the square of #{next}?
@@ -311,8 +314,23 @@ main :: IO ()
 main = warp 3000 App
 ```
 
+>**Note**
+> Feel free to skip these annotations if you're already familiar with how Yesod generates routes
 
+1. This `parseRoutes` quasiquoter parses the Yesod routing DSL and generates the code for routing requests to the correct handler functions.
+   You can read the official Yesod documentation to learn more about how the DSL works, but I'll give a brief summary here. To define an endpoint
+   you must first provide a path pattern that may or may not have path path parameters, such as `/` or `/square/#Int`, where `#Int` represents a path parameter    of type `Int`. Then you must assign an upper case identifier to the route definition, such as `HomeR` or `SqR`. The convention is that the route name ends in    `R`, but this is not necessary. Finally, you may assign one or more HTTP methods to the route. Identifiers like `GET`, `POST`, etc. are used. This will          restrict what kinds of HTTP requests the route will accept.
+2. The `getHomeR` handler corresponds to the route `/ HomeR GET`. `getHomeR` MUST be named `getHomeR`. This is not a convention. To name a handler function        correctly for a route definition the name of the handler function must start with the HTTP method that the route accepts, in lowercase letters, followed by      the name of the route definition. So `/ HomeR GET` corresponds to `getHomeR` and `/square/#Int SqR GET` corresponds to `getSqR`. Another thing to note is        that the type of the handler function must correctly correspond to the route definition. For example, `getSqR` takes an `Int` as an argument because its
+   corresponding route definition has a path parameter of type `Int`. 
+3. Here we're using the `hamlet` DSL to generate the HTML that's returned to the client. We can embed values in our HTML using `#{}`, and embed our                application's routes in the template using `@{}`. I want you to focus on the use of `@{}` throughout this template. Inside of the `@{}` declarations you'll      see the identifiers that we assigned to our route definitions earlier. Insteading of manually typing the value of our hrefs and potentially making a mistake
+   that isn't caught at compile-time, we can use `@{HomeR}` or `@{SqR 0}` to automatically and correctly generate the values of our hrefs. Since the `SqR` route    defintion contains a path parameter of type `Int`, we must pass a value of type `Int` into the `SqR` constructor. For example, `@{SqR 1}` generates
+   the URL `/square/1`.
 
+The main point that I'm trying to get across is that Yesod provides type safety to the developer. The more mistakes the developer can identify at compile-time, before our code is executed, the better. Yesod protects the developer from the possibility of mistyping a URL. As long as the developer uses `@{}` to generate links in their templates, they are guaranteed to take the user to a valid location.
+
+How can we mimic this useful feature in Okapi?
+Okapi partially achieves the level of safety Yesod gives us using *bidirectional patterns*. As the name implies, bidirectional patterns can be used to
+to both pattern match and construct routes. Let's explore how this can be used to our advantadge.
 
 ```haskell
 pattern HomeR :: (Method, Path)
