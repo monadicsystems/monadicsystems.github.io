@@ -39,12 +39,17 @@ main = run id do
 ```
 
 1. Checks that the request's method is `GET`
+ 
 2. Checks that the first part of the URL path is equal to `greet`
+
 3. Binds a path parameter or a query parameter to `maybeName`, if it exists. Otherwise, `Nothing` is bound to `maybeName`. This line contains two useful            parser combinators:
      * The `optional` parser combinator from the `parser-combinators` library. This transforms the result of a parser into `Nothing` if it fails, or                    `Just value` if it succeeds
      * The `<|>` operator from the `Alternative` typeclass. If the parser on the left side of the operator fails, the parser on the right side of the operator          is tried
+
 4. Checks that the request has no more remaining path parts
+
 5. A let expression that assigns the correct value to `greeting` based on the value of `maybeName`
+
 6. Write `greeting` to the response body
 
 Here's another example of simple server that returns `ping` on a `GET` request to `/pong`, and `pong` on `GET` request to `/ping`.
@@ -142,8 +147,10 @@ Route::get('/greeting/{name}', function ($name) {
 We can see a pattern here. Method-Path-Handler style frameworks share these 3 traits.
 
 1. The use of higher-order functions, such as `get`, `post`, etc. to represent the HTTP method that the endpoint accepts.
+
 2. The higher-order functions representing HTTP methods take a pattern as the first argument, usually represented as a string. This pattern represents
    the URL path that the endpoint will respond to. Path parameters are also defined in this pattern.
+
 3. The higher-order functions take a function representing the handler as the second argument. This handler is executed if the request uses the correct
    method and matches the URL path pattern.
 
