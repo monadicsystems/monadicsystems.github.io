@@ -43,7 +43,9 @@ main = run id do
 2. Checks that the first part of the URL path is equal to `greet`
 
 3. Binds a path parameter or a query parameter to `maybeName`, if it exists. Otherwise, `Nothing` is bound to `maybeName`. This line contains two useful            parser combinators:
+
      * The `optional` parser combinator from the `parser-combinators` library. This transforms the result of a parser into `Nothing` if it fails, or                    `Just value` if it succeeds
+
      * The `<|>` operator from the `Alternative` typeclass. If the parser on the left side of the operator fails, the parser on the right side of the operator          is tried
 
 4. Checks that the request has no more remaining path parts
