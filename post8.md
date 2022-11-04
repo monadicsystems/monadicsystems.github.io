@@ -285,7 +285,8 @@ Let's see how this is accomplished in Yesod, and then let's try to mimic this us
 data App = App
 instance Yesod App
 
-mkYesod "App" [parseRoutes| -- (1)
+-- (1)
+mkYesod "App" [parseRoutes|
 / HomeR GET
 /square/#Int SqR GET
 |]
@@ -302,8 +303,8 @@ getSqR n = do
   let
     prev = n - 1
     next = n + 1  
-  defaultLayout
-    [whamlet| -- (3)
+  defaultLayout -- (3)
+    [whamlet|
       <b>The square of #{n} is #{n * n}.
       <a href=@{SqR prev}>What's the square of #{prev}?
       <a href=@{SqR next}>What's the square of #{next}?
@@ -320,8 +321,10 @@ main = warp 3000 App
 1. This `parseRoutes` quasiquoter parses the Yesod routing DSL and generates the code for routing requests to the correct handler functions.
    You can read the official Yesod documentation to learn more about how the DSL works, but I'll give a brief summary here. To define an endpoint
    you must first provide a path pattern that may or may not have path path parameters, such as `/` or `/square/#Int`, where `#Int` represents a path parameter    of type `Int`. Then you must assign an upper case identifier to the route definition, such as `HomeR` or `SqR`. The convention is that the route name ends in    `R`, but this is not necessary. Finally, you may assign one or more HTTP methods to the route. Identifiers like `GET`, `POST`, etc. are used. This will          restrict what kinds of HTTP requests the route will accept.
+
 2. The `getHomeR` handler corresponds to the route `/ HomeR GET`. `getHomeR` MUST be named `getHomeR`. This is not a convention. To name a handler function        correctly for a route definition the name of the handler function must start with the HTTP method that the route accepts, in lowercase letters, followed by      the name of the route definition. So `/ HomeR GET` corresponds to `getHomeR` and `/square/#Int SqR GET` corresponds to `getSqR`. Another thing to note is        that the type of the handler function must correctly correspond to the route definition. For example, `getSqR` takes an `Int` as an argument because its
-   corresponding route definition has a path parameter of type `Int`. 
+   corresponding route definition has a path parameter of type `Int`.
+
 3. Here we're using the `hamlet` DSL to generate the HTML that's returned to the client. We can embed values in our HTML using `#{}`, and embed our                application's routes in the template using `@{}`. I want you to focus on the use of `@{}` throughout this template. Inside of the `@{}` declarations you'll      see the identifiers that we assigned to our route definitions earlier. Insteading of manually typing the value of our hrefs and potentially making a mistake
    that isn't caught at compile-time, we can use `@{HomeR}` or `@{SqR 0}` to automatically and correctly generate the values of our hrefs. Since the `SqR` route    defintion contains a path parameter of type `Int`, we must pass a value of type `Int` into the `SqR` constructor. For example, `@{SqR 1}` generates
    the URL `/square/1`.
@@ -329,58 +332,105 @@ main = warp 3000 App
 The main point that I'm trying to get across is that Yesod provides type safety to the developer. The more mistakes the developer can identify at compile-time, before our code is executed, the better. Yesod protects the developer from the possibility of mistyping a URL. As long as the developer uses `@{}` to generate links in their templates, they are guaranteed to take the user to a valid location.
 
 How can we mimic this useful feature in Okapi?
-Okapi partially achieves the level of safety Yesod gives us using *bidirectional patterns*. As the name implies, bidirectional patterns can be used to
-to both pattern match and construct routes. Let's explore how this can be used to our advantadge.
+Okapi partially achieves the level of safety using *bidirectional patterns*. As the name implies, bidirectional patterns can be used to
+to both pattern match and construct values. Let's explore how this can be used to our advantadge.
 
 ```haskell
+-- (1)
 pattern HomeR :: (Method, Path)
 pattern HomeR = (GET, [])
 
 pattern SqR :: Int -> (Method, Path)
 pattern SqR n = (GET, ["square", PathParam n])
 
+-- (2)
 route :: MonadServer m => ((Method, Path) -> m ()) -> m ()
-route matcher = do
+route handler = do
   requestMethod <- method
   requestPath   <- path
-  matcher (requestMethod, requestPath)
+  handler (requestMethod, requestPath)
 
 main :: IO ()
-main = run id $ route \case
-  HomeR -> do
+main = run id $ route \case -- (3)
+  HomeR -> write $ renderHtml $
+    [hamlet|
+      <h1>Welcome!
+      <a href=@{SqR 0}>Squares starting at 0
+    |] render
   SqR n -> do
+    let
+      prev = n - 1
+      next = n + 1
+    write $ renderHtml $
+      [hamlet|
+        <b>The square of #{n} is #{n * n}.
+        <a href=@{SqR prev}>What's the square of #{prev}?
+        <a href=@{SqR next}>What's the square of #{next}?
+        <a href=@{HomeR}>Go Home
+      |] render
   _ -> next
+  
+-- (4)
+render :: Render (Method, Path)
+render (_, requestPath) _ = renderPath requestPath
 ```
+
+1. Instead of using a custom DSL to define our routes, we use the pattern synonyms to define them.
+   In this case our pattern synonyms represent a tuple of `Method` and `Path`. `Path` is just a type synonym for `[Text]`.
+   If our route contains path parameters, we use the `PathParam` type synonym to express that in our `Path` pattern.
+   The definitions are pretty self-explanatory. Also note the type signatures of the pattern synonyms.
+
+2. The `route` function is a higher-order function that is parameterized by a handler function of the type `MonadServer m => (Method, Path) -> m ()`. `route`      extracts the HTTP method and URL path of the request, and passes these as a tuple to the handler function.
+   
+3. For the handler passed into the `route` function we just use a simple lambda function. The `-XLambadCase` language extension allows us to begin pattern          matching on the lambda's argument without binding it to an identifier. In this case, we're pattern matching on values of type `(Method, Path)` using the
+   pattern synonyms we defined earlier. If the request doesn't match any of our pattern synonyms and we reach the last case in the case statement, we call          `next`, which tries another parser if there is one. In this case we're not using the `route` function with `<|>` to combine it with another parser, so it        will just return a `404 Not Found` error. If there is a match, the correct response modifiers are executed. You'll notice that I'm using the `hamlet`            templating language. Usually I use `lucid` to generate HTML when using Okapi, but to keep this example similar to the Yesod example, I'm using `hamlet`.
+   It also shows that you can use Okapi with the templating language of your choice.
+   
+4. The `render` function is used to tell the Hamlet template how to render values of type `(Method, Path)` as URLs. Here, we just ignore the method part of the
+   tuple and use the `renderPath` provided by Okapi to render the request path as an URL.
+   
+Looks good! Obviously, Yesod does a lot more than just provide type-safe routing, but I think it's great that we can at least mimic some of Yesod's functionality with Okapi and minimal additional complexity. We just used higher-order functions and pattern synonyms in addtion to Okapi's core parsers to implement this feature.
 
 ## Mimicking Servant
 
 Servant. My first Haskell web framework, and one of the most practical uses of type-level programming that I know of.
-In Servant, you define your API endpoints as types.
+In Servant, you define your API endpoints as types. Here's an example from the official Servant documentation.
 
 ```haskell
+type UserAPI3 = "users" :> "list-all" :> "now" :> Get '[JSON] [User]
+              -- describes an endpoint reachable at:
+              -- /users/list-all/now
 ```
+
+This type definition represents an API that returns a list of `User` as `JSON` when a `GET` request is made to `/users/list-all/now`.
 
 Cool, right? This isn't just for show though. By using types to define API endpoints, we not only get type-safe routing as we defined it in the previous section, but also automatic client-side code generation, automatic API documentation generation, and stronger formal guarantees about the API at compile-time. Why is the fact that we have stronger formal gurantees about our API at compile time important? What does this mean? Well, it means we know more about the behavior of the API before we even execute it. Before we run the program we know what type of requests our endpoints will accept, what type of data they will return, and even what type of errors they may throw. Knowing all of this information at compile time is useful because we get practical features like automatic client-side code generation and API documentation generation for free.
 
-So, can we mimic this level of type-safety in Okapi? The short answer is, no. A mentor of mine mentioned that it maybe possible to achieve more type-safety with Okapi by using [*indexed monads*](). I won't go into detail about what indexed monads are here, but It's an interesting topic and I suggest you read about them if you're already fairly comfortable with monads. Anyways, even if we did make Okapi an indexed monadic DSL it would require us to change the core library quite drastically which is something we're trying to avoid here. So, are there any other options?
+So, can we mimic this level of type-safety in Okapi? The short answer is, no. A mentor of mine mentioned that it maybe possible to achieve more type-safety with Okapi by using [*indexed monads*](). I won't go into detail about what indexed monads are here, but It's an interesting topic and I suggest you read about them if you're already fairly comfortable with monads. Anyways, even if we did make Okapi an indexed monadic DSL it would require us to change the core library quite drastically which is something we're trying to avoid here. I am open to someone creating a `okapi-indexed` library though.
 
-Instead of trying to mimic the power of Servant, let's form a symbiotic relationship with Servant instead.
+So, are there any other options? Instead of trying to mimic the power of Servant, let's form a symbiotic relationship with Servant instead.
 
 > symbiosis - interaction between two different organisms living in close physical association, **typically to the advantage of both**.
 
-Since Okapi and Servant share a common ancestor, WAI, we can use them with each other without much friction.
+Since Okapi and Servant share a common ancestor, WAI, we can use them with each other without much friction. [There's a detailed tutorial on how to do this
+in the official Okapi documentation]().
 
-```haskell
-```
+If you have a long-standing Servant project and want to try Okapi without rewriting all your code, you can.
+If you try Okapi and find out you don't like it or need more type-safety, you can gradually migrate to Servant.
 
-This is great for a few reasons:
-
-1. You can introduce Okapi into your long-standing Servant project, or switch from your prototype Okapi project to Servant
-2. 
+One way of using Okapi that could potentially be useful is using Okapi as a quick prototyping tool and then gradually migrating your API
+to Servant to "harden" it over time.
 
 ## Conclusion
 
-, but if we wanted, we could also define it like this.
+We discovered how flexible Okapi is and how we can customize it in various ways to suit our specific needs and/or preferences.
+Okapi is still very much a WIP! At this stage I'm just experimenting with ideas, but would like to have 1.0 release ready for next year if the community thinks it would be worth the effort.
+There are still many things that need to be done in order for Okapi to be production ready. I can only work on this project part-time, so if you're
+looking for a fun, cool, modern side-project to work on, checkout it out on GitHub.
+
+One thing I would like to do in the near future is build a realword application, preferably a SaaS application, with Okapi to see how it fares in comparison to other web frameworks. I'd also like to get some benchmarks going.
+
+Stay tuned for my next post where we will attempt to recreate the Elm Architecture on the server in pure Haskell using Okapi + Lucid + Htmx.
 
 ```haskell
 main = do
